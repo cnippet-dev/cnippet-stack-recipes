@@ -1,0 +1,35 @@
+# GitHub PR Labeler configuration
+# Docs: https://github.com/actions/labeler
+
+# apps/reference: Next.js app showcasing component/recipe reference docs
+"app:reference":
+  - changed-files:
+      - any-glob-to-any-file: "apps/reference/**"
+
+"package:ui":
+  - changed-files:
+      - any-glob-to-any-file: "packages/ui/**"
+
+"package:eslint-config":
+  - changed-files:
+      - any-glob-to-any-file: "packages/eslint-config/**"
+
+"package:typescript-config":
+  - changed-files:
+      - any-glob-to-any-file: "packages/typescript-config/**"
+
+"ci/cd":
+  - changed-files:
+      - any-glob-to-any-file: ".github/**"
+
+"documentation":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "**/*.md"
+          - "**/*.mdx"
+
+"dependencies":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "**/package.json"
+          - "bun.lock"
