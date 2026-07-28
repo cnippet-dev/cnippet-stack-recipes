@@ -1,36 +1,69 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# authjs recipe
 
-## Getting Started
+List of files which are essential to this template and additional files for usage.
 
-First, run the development server:
+## Priority Files
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- auth.config.ts
+- auth.ts
+- prisma.config.ts
+
+- prisma/schema.ts
+
+- lib/dal.ts
+- lib/primsa.ts
+
+- lib/actions/login.ts
+- lib/actions/register.ts
+- lib/actions/signout.ts
+
+- lib/auth/authorize-credentials.ts
+- lib/auth/route-guard.ts
+- lib/auth/session-callbacks.ts
+
+- lib/errors/auth-error.ts
+- lib/errors/handle-auth-errors.ts
+
+- lib/validations/auth.schema.ts
+
+- types/next-auth.d.ts (also modify tsconfig.json to include this file if not included)
+
+## Priority Components
+
+- components/auth/login-form.tsx (require cnippet components)
+- components/auth/register-form.tsx (require cnippet components)
+- components/auth/oauth-buttons.tsx (require cnippet components)
+- components/auth/signout-button.tsx (require cnippet components)
+
+- components/session-provider.tsx
+
+## Priority Route
+
+- api/auth/[...nextauth]/route.ts
+
+## Priority Layout
+
+- app/layout.tsx (wrap the app with session provider)
+
+## Added Files
+
+- proxy.ts
+
+## Added UI
+
+- app/(auth)/login/page.tsx
+- app/(auth)/register/page.tsx
+
+## .env variables
+
+```ts
+DATABASE_URL = "postgres_db_url(neonDB))";
+
+AUTH_SECRET = "string_to_encrypt_JWT";
+
+AUTH_GOOGLE_ID = "clientID_of_project_from_cloud_console(OAuth)";
+AUTH_GOOGLE_SECRET = "clientSecret_of_project_from_cloud_console";
+
+AUTH_GITHUB_ID = "clientID_from_github(OAuth)";
+AUTH_GITHUB_SECRET = "clientID_from_github";
 ```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
