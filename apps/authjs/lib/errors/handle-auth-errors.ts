@@ -1,16 +1,16 @@
 import { AuthError } from "next-auth";
 
 export const ERROR_MESSAGES: Record<string, string> = {
-  invalid_credentials: "Invalid email or password.",
-  oauth_account_exists:
-    "This email is registered with Google Sign-In. Please continue with Google instead.",
+  AccessDenied: "You don't have permission to sign in.",
   account_not_verified: "Please verify your email before signing in.",
   CredentialsSignin: "Invalid email or password.",
+  Default: "Something went wrong. Please try again.",
+  invalid_credentials: "Invalid email or password.",
   OAuthAccountNotLinked:
     "An account already exists with this email. Please sign in with your email and password instead.",
-  AccessDenied: "You don't have permission to sign in.",
+  oauth_account_exists:
+    "This email is registered with Google Sign-In. Please continue with Google instead.",
   Verification: "That verification link is invalid or has expired.",
-  Default: "Something went wrong. Please try again.",
 };
 
 export function getAuthErrorMessage(

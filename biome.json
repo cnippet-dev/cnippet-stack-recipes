@@ -30,7 +30,9 @@
       "!**/apps/ui/public/",
       "!**/packages/ui/src/components",
       "!**/packages/ui/src/lib",
-      "!**/packages/ui/src/hooks"
+      "!**/packages/ui/src/hooks",
+      "!**/apps/authjs/app/generated",
+      "!**/apps/authjs/app/generated/prisma"
     ]
   },
   "formatter": {

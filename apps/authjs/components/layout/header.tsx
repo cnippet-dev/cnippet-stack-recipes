@@ -1,12 +1,12 @@
 "use client";
 
-import { useSession } from "next-auth/react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 
 export default function Header() {
   const { data: session } = useSession();
   return (
-    <nav className="h-[70px] w-screen absolute top-0 left-0 flex items-center justify-end text-background">
+    <nav className="absolute top-0 left-0 flex h-[70px] w-screen items-center justify-end text-background">
       {session?.user ? (
         session?.user.role === "ADMIN" ? (
           <Link

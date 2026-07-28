@@ -3,8 +3,8 @@
 import bcrypt from "bcryptjs";
 import { signIn } from "@/auth";
 import { registerSchema } from "@/lib/validations/auth.schema";
-import prisma from "../prisma";
 import { resolveAuthError } from "../errors/handle-auth-errors";
+import prisma from "../prisma";
 
 export type RegisterFormState = {
   success: boolean;
@@ -23,7 +23,7 @@ export async function registerAction(
   const parsed = registerSchema.safeParse(Object.fromEntries(formData));
 
   if (!parsed.success) {
-    return { success: false, fieldErrors: parsed.error.flatten().fieldErrors };
+    return { fieldErrors: parsed.error.flatten().fieldErrors, success: false };
   }
 
   const { name, email, password } = parsed.data;
@@ -31,18 +31,18 @@ export async function registerAction(
 
   if (existing) {
     return {
-      success: false,
       message: "Unable to register with these details.",
+      success: false,
     };
   }
 
   const passwordHash = await bcrypt.hash(password, 12);
-  await prisma.user.create({ data: { name, email, passwordHash } });
+  await prisma.user.create({ data: { email, name, passwordHash } });
 
   try {
     await signIn("credentials", { email, password, redirect: false });
     return { success: true };
   } catch (error) {
-    return { success: false, message: resolveAuthError(error) };
+    return { message: resolveAuthError(error), success: false };
   }
 }

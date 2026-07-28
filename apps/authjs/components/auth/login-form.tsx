@@ -1,10 +1,9 @@
 "use client";
 
-import { loginAction } from "@/lib/actions/login";
-import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { useActionState, useEffect, useState } from "react";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { useActionState, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -22,6 +21,7 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group";
 import { Separator } from "@/components/ui/separator";
+import { loginAction } from "@/lib/actions/login";
 
 export function LoginForm({
   initialError,
@@ -44,7 +44,7 @@ export function LoginForm({
         router.refresh();
       });
     }
-  }, [state.success]);
+  }, [state.success, update, router.refresh, router.push]);
 
   return (
     <Card className="mx-auto w-full max-w-xs">
@@ -60,17 +60,17 @@ export function LoginForm({
             <Field>
               <FieldLabel htmlFor="email">Email address</FieldLabel>
               <Input
+                autoComplete="email"
+                className="rounded-xs"
                 id="email"
                 name="email"
                 placeholder="name@example.com"
                 required
                 type="email"
-                autoComplete="email"
-                className="rounded-xs"
               />
             </Field>
             <Field>
-              <div className="flex items-center justify-between w-full">
+              <div className="flex w-full items-center justify-between">
                 <FieldLabel htmlFor="password">Password</FieldLabel>
                 <a
                   className="text-muted-foreground text-xs underline-offset-4 hover:underline"
@@ -81,21 +81,21 @@ export function LoginForm({
               </div>
               <InputGroup className="rounded-xs">
                 <InputGroupInput
+                  autoComplete="current-password"
                   id="password"
                   name="password"
                   placeholder="Password"
                   required
                   type={isVisible ? "text" : "password"}
-                  autoComplete="current-password"
                 />
                 <InputGroupAddon align="inline-end">
                   <Button
                     aria-label={isVisible ? "Hide password" : "Show password"}
+                    className="rounded-xs"
                     onClick={() => setIsVisible(!isVisible)}
                     size="icon-sm"
-                    variant="ghost"
                     type="button"
-                    className="rounded-xs"
+                    variant="ghost"
                   >
                     {isVisible ? (
                       <EyeOffIcon aria-hidden="true" />
@@ -108,20 +108,20 @@ export function LoginForm({
             </Field>
             <Button
               className="w-full rounded-xs"
-              type="submit"
               disabled={pending}
+              type="submit"
             >
               {pending ? "Signing in..." : "Sign in"}
             </Button>
           </div>
 
           {state?.message && (
-            <p role="alert" className="text-destructive text-sm">
+            <p className="text-destructive text-sm" role="alert">
               {state.message}
             </p>
           )}
         </form>
-        <div className="flex flex-col gap-6 mt-5">
+        <div className="mt-5 flex flex-col gap-6">
           <div className="flex items-center gap-3 text-muted-foreground text-xs">
             <Separator className="flex-1" />
             <span>Or continue with</span>

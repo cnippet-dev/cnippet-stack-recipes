@@ -1,9 +1,9 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
-import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { signoutAction, SignOutState } from "@/lib/actions/signout";
+import { useSession } from "next-auth/react";
+import { useActionState, useEffect } from "react";
+import { type SignOutState, signoutAction } from "@/lib/actions/signout";
 
 const initialState: SignOutState = {};
 
@@ -19,11 +19,11 @@ export function SignOutButton() {
         router.refresh();
       });
     }
-  }, [state.success]);
+  }, [state.success, update, router.refresh, router.push]);
 
   return (
     <form action={formAction}>
-      <button type="submit" className="underline underline-offset-2">
+      <button className="underline underline-offset-2" type="submit">
         Sign out
       </button>
     </form>

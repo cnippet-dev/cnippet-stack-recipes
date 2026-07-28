@@ -1,6 +1,6 @@
+import { redirect } from "next/navigation";
 import Header from "@/components/layout/header";
 import { getCurrentUser } from "@/lib/dal";
-import { redirect } from "next/navigation";
 
 export default async function AuthLayout({
   children,
@@ -15,7 +15,7 @@ export default async function AuthLayout({
   return (
     <>
       <Header />
-      <main className="mx-auto max-w-sm flex flex-col items-center justify-center  text-white px-4 py-4 rounded-sm mt-[15%]">
+      <main className="mx-auto mt-[15%] flex max-w-sm flex-col items-center justify-center rounded-sm px-4 py-4 text-white">
         {children}
       </main>
     </>

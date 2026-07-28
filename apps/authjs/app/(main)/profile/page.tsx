@@ -21,10 +21,8 @@ export default function Profile() {
       .finally(() => setLoading(false));
   }, []);
   return (
-    <>
-      <div className="h-screen w-screen bg-black text-white flex items-center justify-center text-xl tracking-widest uppercase">
-        {loading ? "Loading..." : `${user?.email} • ${user?.role}`}
-      </div>
-    </>
+    <div className="flex h-screen w-screen items-center justify-center bg-black text-white text-xl uppercase tracking-widest">
+      {loading ? "Loading..." : `${user?.email} • ${user?.role}`}
+    </div>
   );
 }
