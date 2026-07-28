@@ -6,7 +6,7 @@ import Link from "next/link";
 export default function Header() {
   const { data: session } = useSession();
   return (
-    <nav className="h-[70px] w-screen absolute top-0 left-0 flex items-center justify-end">
+    <nav className="h-[70px] w-screen absolute top-0 left-0 flex items-center justify-end text-background">
       {session?.user ? (
         session?.user.role === "ADMIN" ? (
           <Link
