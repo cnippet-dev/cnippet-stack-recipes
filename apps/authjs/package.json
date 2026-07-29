@@ -42,9 +42,9 @@
   "private": true,
   "scripts": {
     "build": "next build",
+    "db:generate": "prisma generate",
     "dev": "next dev",
-    "start": "next start",
-    "db:generate": "prisma generate"
+    "start": "next start"
   },
   "trustedDependencies": [
     "sharp",

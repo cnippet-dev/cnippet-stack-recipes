@@ -1,11 +1,6 @@
 {
   "$schema": "https://turborepo.dev/schema.json",
   "tasks": {
-    "db:generate": {
-      "cache": true,
-      "inputs": ["prisma/schema.prisma", "prisma/**/*.prisma"],
-      "outputs": ["app/generated/prisma/**"]
-    },
     "build": {
       "dependsOn": ["^build", "db:generate"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
@@ -13,6 +8,11 @@
     },
     "check-types": {
       "dependsOn": ["^check-types"]
+    },
+    "db:generate": {
+      "cache": true,
+      "inputs": ["prisma/schema.prisma", "prisma/**/*.prisma"],
+      "outputs": ["app/generated/prisma/**"]
     },
     "dev": {
       "cache": false,
