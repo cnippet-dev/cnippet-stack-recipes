@@ -11,7 +11,8 @@
     },
     "db:generate": {
       "cache": true,
-      "inputs": ["prisma/schema.prisma", "prisma/**/*.prisma"],
+      "env": ["DATABASE_URL"],
+      "inputs": ["prisma/schema.prisma"],
       "outputs": ["app/generated/prisma/**"]
     },
     "dev": {
