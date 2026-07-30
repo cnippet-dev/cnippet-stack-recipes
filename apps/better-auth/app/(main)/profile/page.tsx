@@ -1,7 +1,12 @@
 import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import { auth } from "@/lib/auth/auth";
 import { env } from "@/lib/config/env";
 
 export default async function Profile() {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) redirect("/login");
+
   const data = await fetch(`${env.NEXT_PUBLIC_APP_URL}/api/v1/me`, {
     headers: await headers(),
   });
