@@ -10,6 +10,7 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   NEXT_TELEMETRY_DISABLED: 1
   DATABASE_URL: postgresql://user:password@localhost:5432/db
+  AUTH_SECRET: build-only-placeholder-secret
 
 jobs:
   build:
