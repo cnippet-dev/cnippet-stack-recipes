@@ -21,6 +21,7 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group";
 import { Separator } from "@/components/ui/separator";
+import { toastManager } from "@/components/ui/toast";
 import { loginAction } from "@/lib/actions/login";
 
 export function LoginForm({
@@ -45,6 +46,12 @@ export function LoginForm({
       });
     }
   }, [state.success, update, router.refresh, router.push]);
+
+  useEffect(() => {
+    if (state.message) {
+      toastManager.add({ title: state.message, type: "error" });
+    }
+  }, [state]);
 
   return (
     <Card className="mx-auto w-full max-w-xs">
@@ -114,12 +121,6 @@ export function LoginForm({
               {pending ? "Signing in..." : "Sign in"}
             </Button>
           </div>
-
-          {state?.message && (
-            <p className="text-destructive text-sm" role="alert">
-              {state.message}
-            </p>
-          )}
         </form>
         <div className="mt-5 flex flex-col gap-6">
           <div className="flex items-center gap-3 text-muted-foreground text-xs">

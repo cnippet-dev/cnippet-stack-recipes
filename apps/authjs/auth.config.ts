@@ -13,4 +13,5 @@ export const authConfig = {
     signIn: "/login",
   },
   providers: [Google, GitHub],
+  trustHost: true,
 } satisfies NextAuthConfig;

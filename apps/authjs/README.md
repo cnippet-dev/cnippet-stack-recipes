@@ -19,7 +19,6 @@ List of files which are essential to this template and additional files for usag
 
 - lib/auth/authorize-credentials.ts
 - lib/auth/route-guard.ts
-- lib/auth/session-callbacks.ts
 
 - lib/errors/auth-error.ts
 - lib/errors/handle-auth-errors.ts

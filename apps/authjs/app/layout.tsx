@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/components/providers/session-provider";
+import { AnchoredToastProvider, ToastProvider } from "@/components/ui/toast";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +32,11 @@ export default function RootLayout({
       lang="en"
     >
       <body className="flex min-h-full flex-col bg-foreground">
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <ToastProvider position="top-left">
+            <AnchoredToastProvider>{children}</AnchoredToastProvider>
+          </ToastProvider>
+        </AuthProvider>
       </body>
     </html>
   );

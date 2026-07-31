@@ -21,6 +21,7 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group";
 import { Separator } from "@/components/ui/separator";
+import { toastManager } from "@/components/ui/toast";
 import { type RegisterFormState, registerAction } from "@/lib/actions/register";
 
 const initialState: RegisterFormState = { success: false };
@@ -49,6 +50,12 @@ export default function RegisterForm({
     }
   }, [state.success, update, router.refresh, router.push]);
 
+  useEffect(() => {
+    if (state.message) {
+      toastManager.add({ title: state.message, type: "error" });
+    }
+  }, [state]);
+
   return (
     <Card className="mx-auto w-full max-w-xs">
       <CardHeader>
@@ -59,7 +66,7 @@ export default function RegisterForm({
         <form action={formAction} className="grid gap-6">
           <div className="grid gap-4">
             <Field>
-              <FieldLabel htmlFor="email">Name</FieldLabel>
+              <FieldLabel htmlFor="name">Name</FieldLabel>
               <Input
                 autoComplete="name"
                 className="rounded-xs"
@@ -67,8 +74,13 @@ export default function RegisterForm({
                 name="name"
                 placeholder="Cnippet Doe"
                 required
-                type="name"
+                type="text"
               />
+              {state.fieldErrors?.name && (
+                <p className="text-destructive text-xs" role="alert">
+                  {state.fieldErrors.name[0]}
+                </p>
+              )}
             </Field>
             <Field>
               <FieldLabel htmlFor="email">Email address</FieldLabel>
@@ -81,6 +93,11 @@ export default function RegisterForm({
                 required
                 type="email"
               />
+              {state.fieldErrors?.email && (
+                <p className="text-destructive text-xs" role="alert">
+                  {state.fieldErrors.email[0]}
+                </p>
+              )}
             </Field>
             <Field>
               <div className="flex w-full items-center justify-between">
@@ -118,6 +135,11 @@ export default function RegisterForm({
                   </Button>
                 </InputGroupAddon>
               </InputGroup>
+              {state.fieldErrors?.password && (
+                <p className="text-destructive text-xs" role="alert">
+                  {state.fieldErrors.password[0]}
+                </p>
+              )}
             </Field>
             <Button
               className="w-full rounded-xs"
@@ -127,12 +149,6 @@ export default function RegisterForm({
               {pending ? "Signing in..." : "Sign in"}
             </Button>
           </div>
-
-          {state?.message && (
-            <p className="text-destructive text-sm" role="alert">
-              {state.message}
-            </p>
-          )}
         </form>
         <div className="mt-5 flex flex-col gap-6">
           <div className="flex items-center gap-3 text-muted-foreground text-xs">
