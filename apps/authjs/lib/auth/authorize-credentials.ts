@@ -1,8 +1,5 @@
 import bcrypt from "bcryptjs";
-import {
-  InvalidCredentialsError,
-  OAuthOnlyAccountError,
-} from "../errors/auth-errors";
+import { InvalidCredentialsError } from "../errors/auth-errors";
 import prisma from "../prisma";
 import { loginSchema } from "../validations/auth.schema";
 
@@ -13,10 +10,7 @@ export async function authorizeCredentials(credentials: unknown) {
   const user = await prisma.user.findUnique({
     where: { email: parsed.data.email },
   });
-  if (!user?.passwordHash) {
-    if (user) throw new OAuthOnlyAccountError();
-    throw new InvalidCredentialsError();
-  }
+  if (!user?.passwordHash) throw new InvalidCredentialsError();
 
   const valid = await bcrypt.compare(parsed.data.password, user.passwordHash);
   if (!valid) throw new InvalidCredentialsError();

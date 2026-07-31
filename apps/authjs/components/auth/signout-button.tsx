@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, useRef } from "react";
 import { type SignOutState, signoutAction } from "@/lib/actions/signout";
 
 const initialState: SignOutState = {};
@@ -11,15 +11,17 @@ export function SignOutButton() {
   const [state, formAction] = useActionState(signoutAction, initialState);
   const { update } = useSession();
   const router = useRouter();
+  const hasSignedOut = useRef(false);
 
   useEffect(() => {
-    if (state.success) {
+    if (state.success && !hasSignedOut.current) {
+      hasSignedOut.current = true;
       update().then(() => {
         router.push("/login");
         router.refresh();
       });
     }
-  }, [state.success, update, router.refresh, router.push]);
+  }, [state.success, update, router]);
 
   return (
     <form action={formAction}>

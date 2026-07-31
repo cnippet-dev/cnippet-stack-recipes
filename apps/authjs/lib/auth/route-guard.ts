@@ -1,5 +1,7 @@
+const PROTECTED_PREFIXES = ["/dashboard", "/settings", "/profile"];
+
 export function isProtectedRoute(pathname: string): boolean {
-  return pathname.startsWith("/dashboard");
+  return PROTECTED_PREFIXES.some((prefix) => pathname.startsWith(prefix));
 }
 
 export function canAccessRoute(
