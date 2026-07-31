@@ -24,7 +24,7 @@ export function SignoutButton() {
     else router.push("/login");
   }
   return (
-    <div>
+    <div className="text-white">
       {error && <p role="alert">{error}</p>}
       <button onClick={signout}>
         {pending ? "Signing out..." : "Signout"}

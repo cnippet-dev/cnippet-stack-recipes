@@ -21,10 +21,14 @@ export default async function Profile() {
   );
 
   return (
-    <div className="flex h-screen w-screen flex-col items-center justify-center bg-foreground text-3xl text-black uppercase tracking-widest">
-      <p>{res.email}</p>
+    <div className="flex h-screen w-screen flex-col items-center justify-center bg-black">
+      <p className="text-white text-xl uppercase tracking-widest">
+        {res.email}
+      </p>
 
-      {hasCredentialAccount && <Enable2FA session={session} />}
+      {hasCredentialAccount && (
+        <Enable2FA twoFactorEnabled={session.user.twoFactorEnabled ?? false} />
+      )}
     </div>
   );
 }

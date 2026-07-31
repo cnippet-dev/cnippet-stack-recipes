@@ -8,7 +8,7 @@ export default async function AdminDashboard() {
   if (session.user.role !== "admin") return;
 
   return (
-    <div className="flex h-screen w-screen items-center justify-center bg-foreground text-3xl text-black uppercase tracking-widest">
+    <div className="flex h-screen w-screen items-center justify-center text-3xl text-white uppercase tracking-widest">
       Welcome {session.user.name} • {session.user.role}
     </div>
   );

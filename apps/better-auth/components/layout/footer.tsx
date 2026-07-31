@@ -7,13 +7,13 @@ export function Footer() {
   const { data: session } = authClient.useSession();
 
   return (
-    <footer className="absolute bottom-0 left-0 flex h-[70px] w-screen items-center justify-end text-black">
+    <footer className="absolute bottom-0 left-0 z-[20] flex h-[70px] w-screen items-center justify-end text-[#ffffff]">
       {session?.user ? (
         <div className="mr-5">
           <SignoutButton />
         </div>
       ) : (
-        <p className="mr-5 text-black">auth.js</p>
+        <p className="mr-5 text-white">auth.js</p>
       )}
     </footer>
   );
