@@ -8,17 +8,23 @@ datasource db {
 }
 
 model User {
-  id               String      @id
+  id               String    @id
   name             String
   email            String
-  emailVerified    Boolean     @default(false)
-  twoFactorEnabled Boolean?    @default(false)
+  emailVerified    Boolean   @default(false)
+  twoFactorEnabled Boolean?  @default(false)
   image            String?
-  createdAt        DateTime    @default(now())
-  updatedAt        DateTime    @updatedAt
-  sessions         Session[]
-  accounts         Account[]
-  twoFactors       TwoFactor[]
+  role             String?
+  banned           Boolean?
+  banReason        String?
+  banExpires       DateTime? @db.Timestamptz(3)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sessions   Session[]
+  accounts   Account[]
+  twoFactors TwoFactor[]
 
   @@unique([email])
   @@map("user")
@@ -28,12 +34,15 @@ model Session {
   id        String   @id
   expiresAt DateTime
   token     String
+
+  ipAddress      String?
+  userAgent      String?
+  impersonatedBy String?
+  userId         String
+  user           User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  ipAddress String?
-  userAgent String?
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([token])
   @@index([userId])
@@ -53,8 +62,9 @@ model Account {
   refreshTokenExpiresAt DateTime?
   scope                 String?
   password              String?
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId])
   @@map("account")
@@ -65,8 +75,9 @@ model Verification {
   identifier String
   value      String
   expiresAt  DateTime
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([identifier])
   @@map("verification")
