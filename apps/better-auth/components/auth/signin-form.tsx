@@ -13,7 +13,6 @@ export function SignInForm() {
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setPending(true);
     setError(undefined);
 
     const formData = new FormData(e.currentTarget);
@@ -27,15 +26,23 @@ export function SignInForm() {
       return;
     }
 
+    setFieldErrors({});
     setPending(true);
-    const { error } = await authClient.signIn.email(parsed.data);
+    const { error } = await authClient.signIn.email(parsed.data, {
+      async onSuccess(context) {
+        console.log(context);
+        if (context.data.twoFactorRedirect) {
+          router.push("/two-factor");
+        } else {
+          router.push("/dashboard");
+        }
+      },
+    });
     setPending(false);
 
     if (error) {
       setError(error.message ?? "Something went wrong. Please try again.");
-      return;
     }
-    router.push("/dashboard");
   }
   return (
     <form className="space-y-4" onSubmit={onSubmit}>

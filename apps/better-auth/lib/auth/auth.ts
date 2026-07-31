@@ -1,6 +1,7 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
+import { twoFactor } from "better-auth/plugins";
 import { env } from "../config/env";
 import prisma from "../db/prisma";
 
@@ -14,7 +15,7 @@ export const auth = betterAuth({
     // requireEmailVerification: true, (Once email sending is wired)
   },
 
-  plugins: [nextCookies()],
+  plugins: [twoFactor(), nextCookies()],
 
   session: {
     cookieCache: { enabled: true, maxAge: 5 * 60 },

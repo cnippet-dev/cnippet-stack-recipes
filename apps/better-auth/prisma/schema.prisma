@@ -8,15 +8,17 @@ datasource db {
 }
 
 model User {
-  id            String    @id
-  name          String
-  email         String
-  emailVerified Boolean   @default(false)
-  image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  sessions      Session[]
-  accounts      Account[]
+  id               String      @id
+  name             String
+  email            String
+  emailVerified    Boolean     @default(false)
+  twoFactorEnabled Boolean?    @default(false)
+  image            String?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  sessions         Session[]
+  accounts         Account[]
+  twoFactors       TwoFactor[]
 
   @@unique([email])
   @@map("user")
@@ -68,4 +70,17 @@ model Verification {
 
   @@index([identifier])
   @@map("verification")
+}
+
+model TwoFactor {
+  id                      String    @id
+  user                    User      @relation(fields: [userId], references: [id])
+  userId                  String
+  secret                  String
+  backupCodes             String
+  verified                Boolean
+  failedVerificationCount Int
+  lockedUntil             DateTime? @db.Timestamptz(3)
+
+  @@map("twoFactor")
 }
