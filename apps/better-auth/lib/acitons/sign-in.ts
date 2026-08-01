@@ -4,6 +4,7 @@ import { isAPIError } from "better-auth/api";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "../auth/auth";
+import { rateLimit } from "../rate-limit";
 import { signInSchema } from "../validations/auth";
 
 export type SignInState = {
@@ -15,6 +16,15 @@ export async function signInAction(
   _prevState: SignInState,
   formData: FormData,
 ): Promise<SignInState> {
+  const email = formData.get("email");
+  const ip = (await headers()).get("x-forwarded-for") ?? "unknown";
+
+  if (!rateLimit(`login:${ip}:${email}`).success) {
+    return {
+      message: "Too many attempts. Please try again later.",
+      success: false,
+    };
+  }
   const parsed = signInSchema.safeParse({
     email: String(formData.get("email")),
     password: String(formData.get("password")),

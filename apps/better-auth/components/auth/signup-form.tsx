@@ -22,11 +22,11 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { authClient } from "@/lib/auth/auth-client";
 import { signUpSchema } from "@/lib/validations/auth";
+import { toastManager } from "../ui/toast";
 import { OAuthButtons } from "./oauth-buttons";
 
 export default function SignUpForm() {
   const router = useRouter();
-  const [error, setError] = useState<string>();
   const [pending, setPending] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
@@ -34,7 +34,6 @@ export default function SignUpForm() {
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setPending(true);
-    setError(undefined);
 
     const formData = new FormData(e.currentTarget);
     const parsed = signUpSchema.safeParse({
@@ -53,9 +52,11 @@ export default function SignUpForm() {
     setPending(false);
 
     if (error) {
-      setError(error.message ?? "Something went wrong. Please try again.");
+      toastManager.add({ title: error.message, type: "error" });
       return;
     }
+
+    toastManager.add({ title: "Signup successfull!", type: "success" });
     router.push("/dashboard");
   }
 
@@ -69,7 +70,7 @@ export default function SignUpForm() {
         <form className="grid gap-6" onSubmit={onSubmit}>
           <div className="grid gap-4">
             <Field>
-              <FieldLabel htmlFor="email">Name</FieldLabel>
+              <FieldLabel htmlFor="name">Name</FieldLabel>
               <Input
                 autoComplete="name"
                 className="rounded-xs"
@@ -148,8 +149,6 @@ export default function SignUpForm() {
               {pending ? "Signing in..." : "Sign in"}
             </Button>
           </div>
-
-          {error && <p className="text-center text-red-500 text-xs">{error}</p>}
         </form>
         <div className="mt-5 flex flex-col gap-6">
           <div className="flex items-center gap-3 text-muted-foreground text-xs">

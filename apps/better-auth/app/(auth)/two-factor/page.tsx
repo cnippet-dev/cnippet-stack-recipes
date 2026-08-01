@@ -17,27 +17,27 @@ import {
   InputOTPGroup,
   InputOTPSlot,
 } from "@/components/ui/input-otp";
+import { toastManager } from "@/components/ui/toast";
 import { authClient } from "@/lib/auth/auth-client";
 
 export default function TwoFactor() {
   const router = useRouter();
   const [code, setCode] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const verifyCode = async () => {
     if (code.length !== 6) return;
     setIsLoading(true);
-    setError(null);
 
     const { error } = await authClient.twoFactor.verifyTotp({ code });
 
     if (error) {
-      setError(error.message ?? "Invalid code. Please try again.");
+      toastManager.add({ title: error.message, type: "error" });
       setIsLoading(false);
       return;
     }
 
+    toastManager.add({ title: "Login successfull!", type: "success" });
     router.push("/dashboard");
   };
 
@@ -66,11 +66,6 @@ export default function TwoFactor() {
               <InputOTPSlot index={5} />
             </InputOTPGroup>
           </InputOTP>
-          {error && (
-            <p className="text-destructive text-sm" role="alert">
-              {error}
-            </p>
-          )}
         </CardContent>
         <CardFooter>
           <Button

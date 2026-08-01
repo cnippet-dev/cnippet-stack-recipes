@@ -22,18 +22,17 @@ import {
   InputGroupInput,
 } from "../ui/input-group";
 import { Separator } from "../ui/separator";
+import { toastManager } from "../ui/toast";
 import { OAuthButtons } from "./oauth-buttons";
 
 export function SignInForm() {
   const router = useRouter();
-  const [error, setError] = useState<string>();
   const [pending, setPending] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setError(undefined);
 
     const formData = new FormData(e.currentTarget);
     const parsed = signInSchema.safeParse({
@@ -54,6 +53,7 @@ export function SignInForm() {
         if (context.data.twoFactorRedirect) {
           router.push("/two-factor");
         } else {
+          toastManager.add({ title: "Login successfull!", type: "success" });
           router.push("/dashboard");
         }
       },
@@ -61,9 +61,10 @@ export function SignInForm() {
     setPending(false);
 
     if (error) {
-      setError(error.message ?? "Something went wrong. Please try again.");
+      toastManager.add({ title: error.message, type: "error" });
     }
   }
+
   return (
     <Card className="mx-auto w-full max-w-xs">
       <CardHeader>
@@ -134,9 +135,6 @@ export function SignInForm() {
                 </p>
               )}
             </Field>
-            {error && (
-              <p className="text-center text-red-500 text-xs">{error}</p>
-            )}
             <Button
               className="w-full rounded-xs"
               disabled={pending}
