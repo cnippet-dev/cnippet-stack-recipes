@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/input-group";
 import { Separator } from "@/components/ui/separator";
 import { authClient } from "@/lib/auth/auth-client";
-import { signUpSchema } from "@/lib/validations/auth";
+import { signUpSchema } from "@/lib/validations/auth.schema";
 import { toastManager } from "../ui/toast";
 import { OAuthButtons } from "./oauth-buttons";
 

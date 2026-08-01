@@ -5,7 +5,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "../auth/auth";
 import { rateLimit } from "../rate-limit";
-import { signUpSchema } from "../validations/auth";
+import { signUpSchema } from "../validations/auth.schema";
 
 export type SignUpState = {
   success: boolean;

@@ -7,7 +7,7 @@ export function Header() {
   const { data: session } = authClient.useSession();
 
   return (
-    <nav className="absolute top-0 left-0 flex h-[70px] w-screen items-center justify-end text-background">
+    <nav className="fixed top-0 left-0 flex h-[70px] w-screen items-center justify-end text-background">
       {session?.user ? (
         session?.user && (
           <>

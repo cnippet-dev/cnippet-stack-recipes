@@ -4,7 +4,7 @@ import { EyeIcon, EyeOffIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { authClient } from "@/lib/auth/auth-client";
-import { signInSchema } from "@/lib/validations/auth";
+import { signInSchema } from "@/lib/validations/auth.schema";
 import { Button } from "../ui/button";
 import {
   Card,

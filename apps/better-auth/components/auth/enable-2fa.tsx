@@ -104,18 +104,20 @@ export function Enable2FA({ twoFactorEnabled }: EnableProps) {
           </CardContent>
         </Card>
       ) : (
-        <Card className="mt-2">
-          <CardHeader className="p-4" style={{ paddingBottom: 0 }}>
-            <CardTitle>Two-factor authentication</CardTitle>
-            <CardDescription>
-              Add an extra layer of security to your account using an
-              authenticator app.
-            </CardDescription>
-          </CardHeader>
-          <CardFooter className="p-4">
-            <Button onClick={() => setStep("password")}>Enable 2FA</Button>
-          </CardFooter>
-        </Card>
+        step !== "qr" && (
+          <Card className="mt-2">
+            <CardHeader className="p-4" style={{ paddingBottom: 0 }}>
+              <CardTitle>Two-factor authentication</CardTitle>
+              <CardDescription>
+                Add an extra layer of security to your account using an
+                authenticator app.
+              </CardDescription>
+            </CardHeader>
+            <CardFooter className="p-4">
+              <Button onClick={() => setStep("password")}>Enable 2FA</Button>
+            </CardFooter>
+          </Card>
+        )
       )}
 
       {/* Password confirmation */}
