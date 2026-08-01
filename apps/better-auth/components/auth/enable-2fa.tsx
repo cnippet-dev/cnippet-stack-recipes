@@ -1,6 +1,7 @@
 "use client";
 
 import { Check, Copy, Loader2, ShieldCheck } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,12 +29,14 @@ import {
 } from "@/components/ui/input-otp";
 import { Label } from "@/components/ui/label";
 import { authClient } from "@/lib/auth/auth-client";
+import { toastManager } from "../ui/toast";
 
 type EnableProps = {
   twoFactorEnabled: boolean;
 };
 
 export function Enable2FA({ twoFactorEnabled }: EnableProps) {
+  const router = useRouter();
   const [step, setStep] = useState<"idle" | "password" | "qr">("idle");
   const [password, setPassword] = useState("");
   const [totpURI, setTotpURI] = useState("");
@@ -42,53 +45,70 @@ export function Enable2FA({ twoFactorEnabled }: EnableProps) {
   const [copied, setCopied] = useState(false);
   const [isEnabling, setIsEnabling] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const confirmPassword = async () => {
     if (!password) return;
     setIsEnabling(true);
-    setError(null);
 
-    const { data, error } = await authClient.twoFactor.enable({
-      issuer: "My app",
-      password,
-    });
+    try {
+      const { data, error } = await authClient.twoFactor.enable({
+        issuer: "My app",
+        password,
+      });
 
-    setIsEnabling(false);
+      if (error) {
+        toastManager.add({
+          title: error.message ?? "Something went wrong.",
+          type: "error",
+        });
+        return;
+      }
 
-    if (error) {
-      setError(error.message ?? "Couldn't verify your password.");
-      return;
-    }
-
-    if (data?.totpURI) {
-      setTotpURI(data.totpURI);
-      setBackupCodes(data.backupCodes);
-      setStep("qr");
-      setPassword("");
+      if (data?.totpURI) {
+        setTotpURI(data.totpURI);
+        setBackupCodes(data.backupCodes ?? []);
+        setStep("qr");
+        setPassword("");
+      }
+    } catch {
+      toastManager.add({ title: "Something went wrong.", type: "error" });
+    } finally {
+      setIsEnabling(false);
     }
   };
 
   const verifyCode = async () => {
     if (code.length !== 6) return;
     setIsVerifying(true);
-    setError(null);
 
-    const { error } = await authClient.twoFactor.verifyTotp({ code });
+    try {
+      const { error } = await authClient.twoFactor.verifyTotp({ code });
 
-    if (error) {
-      setError(error.message ?? "Invalid code. Please try again.");
+      if (error) {
+        toastManager.add({
+          title: error.message ?? "Code verification failed",
+          type: "error",
+        });
+        return;
+      }
+
       setIsVerifying(false);
-      return;
+      router.refresh();
+    } catch {
+      toastManager.add({ title: "Something went wrong.", type: "error" });
+    } finally {
+      setIsVerifying(false);
     }
-
-    window.location.reload();
   };
 
   const copyBackupCodes = async () => {
-    await navigator.clipboard.writeText(backupCodes.join("\n"));
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    try {
+      await navigator.clipboard.writeText(backupCodes.join("\n"));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toastManager.add({ title: "Couldn't copy codes", type: "error" });
+    }
   };
 
   return (
@@ -126,7 +146,6 @@ export function Enable2FA({ twoFactorEnabled }: EnableProps) {
           if (!open) {
             setStep("idle");
             setPassword("");
-            setError(null);
           }
         }}
         open={step === "password"}
@@ -149,11 +168,6 @@ export function Enable2FA({ twoFactorEnabled }: EnableProps) {
               type="password"
               value={password}
             />
-            {error && (
-              <p className="text-destructive text-sm" role="alert">
-                {error}
-              </p>
-            )}
           </div>
 
           <DialogFooter className="p-6 py-4">
@@ -236,11 +250,6 @@ export function Enable2FA({ twoFactorEnabled }: EnableProps) {
                   <InputOTPSlot index={5} />
                 </InputOTPGroup>
               </InputOTP>
-              {error && (
-                <p className="text-destructive text-sm" role="alert">
-                  {error}
-                </p>
-              )}
             </div>
           </CardContent>
           <CardFooter>

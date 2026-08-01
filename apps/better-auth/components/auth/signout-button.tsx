@@ -3,30 +3,40 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { authClient } from "@/lib/auth/auth-client";
+import { toastManager } from "../ui/toast";
 
 export function SignoutButton() {
   const router = useRouter();
-  const [error, setError] = useState<string>();
   const [pending, setPending] = useState(false);
 
   async function signout() {
     setPending(true);
-    setError(undefined);
 
-    const { error } = await authClient.signOut({
-      fetchOptions: {
-        onSuccess: () => router.push("/login"),
-      },
-    });
+    try {
+      const { error } = await authClient.signOut();
 
-    setPending(false);
-    if (error) setError(error.message);
-    else router.push("/login");
+      if (error) {
+        toastManager.add({
+          title: error.message ?? "Something went wrong.",
+          type: "error",
+        });
+        return;
+      }
+      router.push("/login");
+    } catch {
+      toastManager.add({ title: "Something went wrong.", type: "error" });
+    } finally {
+      setPending(false);
+    }
   }
   return (
     <div className="text-white">
-      {error && <p role="alert">{error}</p>}
-      <button onClick={signout}>
+      <button
+        aria-busy={pending}
+        disabled={pending}
+        onClick={signout}
+        type="button"
+      >
         {pending ? "Signing out..." : "Signout"}
       </button>
     </div>

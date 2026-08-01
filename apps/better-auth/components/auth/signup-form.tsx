@@ -33,7 +33,6 @@ export default function SignUpForm() {
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setPending(true);
 
     const formData = new FormData(e.currentTarget);
     const parsed = signUpSchema.safeParse({
@@ -48,16 +47,23 @@ export default function SignUpForm() {
     }
 
     setPending(true);
-    const { error } = await authClient.signUp.email(parsed.data);
-    setPending(false);
 
-    if (error) {
-      toastManager.add({ title: error.message, type: "error" });
-      return;
+    try {
+      const { error } = await authClient.signUp.email(parsed.data);
+      if (error) {
+        toastManager.add({
+          title: error.message ?? "Sign up failed",
+          type: "error",
+        });
+        return;
+      }
+      toastManager.add({ title: "Signup successfull!", type: "success" });
+      router.push("/dashboard");
+    } catch {
+      toastManager.add({ title: "Something went wrong", type: "error" });
+    } finally {
+      setPending(false);
     }
-
-    toastManager.add({ title: "Signup successfull!", type: "success" });
-    router.push("/dashboard");
   }
 
   return (

@@ -47,21 +47,27 @@ export function SignInForm() {
 
     setFieldErrors({});
     setPending(true);
-    const { error } = await authClient.signIn.email(parsed.data, {
-      async onSuccess(context) {
-        console.log(context);
-        if (context.data.twoFactorRedirect) {
-          router.push("/two-factor");
-        } else {
-          toastManager.add({ title: "Login successfull!", type: "success" });
-          router.push("/dashboard");
-        }
-      },
-    });
-    setPending(false);
 
-    if (error) {
-      toastManager.add({ title: error.message, type: "error" });
+    try {
+      const { error } = await authClient.signIn.email(parsed.data, {
+        async onSuccess(context) {
+          if (context.data.twoFactorRedirect) {
+            router.push("/two-factor");
+          } else {
+            toastManager.add({ title: "Login successful!", type: "success" });
+            router.push("/dashboard");
+          }
+        },
+      });
+      if (error)
+        toastManager.add({
+          title: error.message ?? "Sign in failed",
+          type: "error",
+        });
+    } catch {
+      toastManager.add({ title: "Something went wrong", type: "error" });
+    } finally {
+      setPending(false);
     }
   }
 
