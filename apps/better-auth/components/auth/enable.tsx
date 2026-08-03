@@ -54,7 +54,7 @@ type Step =
   | "backup-codes"
   | "disable-confirm";
 
-export function Enable2FA({ twoFactorEnabled, hasPassword }: Props) {
+export function Enable({ twoFactorEnabled, hasPassword }: Props) {
   const router = useRouter();
   const codeInputId = useId();
   const passwordInputId = useId();
@@ -100,7 +100,6 @@ export function Enable2FA({ twoFactorEnabled, hasPassword }: Props) {
 
     const requestId = ++activeRequestId.current;
 
-    // TODO : setup issuer
     try {
       const { data, error } = await authClient.twoFactor.enable({
         issuer: "My App",

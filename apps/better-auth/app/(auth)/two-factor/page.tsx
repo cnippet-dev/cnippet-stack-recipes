@@ -12,6 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import {
   InputOTP,
   InputOTPGroup,
@@ -23,6 +24,8 @@ import { authClient } from "@/lib/auth/auth-client";
 export default function TwoFactor() {
   const router = useRouter();
   const [code, setCode] = useState<string>("");
+  const [backupCode, setBackupCode] = useState<string>("");
+  const [mode, setMode] = useState<"totp" | "backup">("totp");
   const [isLoading, setIsLoading] = useState(false);
 
   const verifyCode = async () => {
@@ -37,41 +40,97 @@ export default function TwoFactor() {
       return;
     }
 
-    toastManager.add({ title: "Login successfull!", type: "success" });
+    toastManager.add({ title: "Login successful!", type: "success" });
     router.push("/dashboard");
+  };
+
+  const verifyBackupCode = async () => {
+    if (!backupCode.trim()) return;
+
+    setIsLoading(true);
+    const { error } = await authClient.twoFactor.verifyBackupCode({
+      code: backupCode.trim(),
+    });
+
+    if (error) {
+      toastManager.add({
+        title: error.message ?? "Something went wrong",
+        type: "error",
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    toastManager.add({ title: "Login successful!", type: "success" });
+    router.push("/dashboard");
+  };
+
+  const toggleMode = () => {
+    setMode((prev) => (prev === "totp" ? "backup" : "totp"));
+    setCode("");
+    setBackupCode("");
   };
 
   return (
     <div className="flex p-4">
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle>Two-factor authentication</CardTitle>
+          <CardTitle>Two-factor authentication </CardTitle>
           <CardDescription>
-            Enter the 6-digit code from your authenticator app.
+            {mode === "totp"
+              ? "Enter the 6-digit code from your authenticator app."
+              : "Enter one of your unused backup codes."}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col items-center gap-4">
-          <InputOTP
-            maxLength={6}
-            onChange={(value) => setCode(value)}
-            onComplete={verifyCode}
-            value={code}
+          {mode === "totp" ? (
+            <InputOTP
+              maxLength={6}
+              onChange={(value) => setCode(value)}
+              onComplete={verifyCode}
+              value={code}
+            >
+              <InputOTPGroup>
+                <InputOTPSlot index={0} />
+                <InputOTPSlot index={1} />
+                <InputOTPSlot index={2} />
+                <InputOTPSlot index={3} />
+                <InputOTPSlot index={4} />
+                <InputOTPSlot index={5} />
+              </InputOTPGroup>
+            </InputOTP>
+          ) : (
+            <Input
+              autoFocus
+              className="text-center"
+              onChange={(e) => setBackupCode(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") verifyBackupCode();
+              }}
+              placeholder="xxxxx-xxxxx"
+              value={backupCode}
+            />
+          )}
+
+          <Button
+            className="text-muted-foreground text-sm"
+            onClick={toggleMode}
+            type="button"
+            variant="link"
           >
-            <InputOTPGroup>
-              <InputOTPSlot index={0} />
-              <InputOTPSlot index={1} />
-              <InputOTPSlot index={2} />
-              <InputOTPSlot index={3} />
-              <InputOTPSlot index={4} />
-              <InputOTPSlot index={5} />
-            </InputOTPGroup>
-          </InputOTP>
+            {mode === "totp"
+              ? "Use a backup code instead"
+              : "Use authenticator app instead"}
+          </Button>
         </CardContent>
         <CardFooter>
           <Button
             className="w-full"
-            disabled={code.length !== 6 || isLoading}
-            onClick={verifyCode}
+            disabled={
+              isLoading ||
+              (mode === "totp" ? code.length !== 6 : !backupCode.trim())
+            }
+            onClick={mode === "totp" ? verifyCode : verifyBackupCode}
           >
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Verify code

@@ -1,3 +1,4 @@
+import { ShieldCheck } from "lucide-react";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Enable2FA } from "@/components/auth/enable-2fa";
@@ -77,6 +78,23 @@ export default async function Profile() {
             </div>
           </div>
           <div className="flex items-center justify-between">
+            <span className="text-muted-foreground">
+              Two Factor Authentication
+            </span>
+            <div className="flex flex-wrap justify-end gap-1">
+              <Badge className="capitalize" variant="outline">
+                {session.user.twoFactorEnabled ? (
+                  <span className="flex items-center gap-1">
+                    <ShieldCheck className="h-3.5 w-3.5" />
+                    Enabled
+                  </span>
+                ) : (
+                  "Disabled"
+                )}
+              </Badge>
+            </div>
+          </div>
+          <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Member since</span>
             <span>
               {session.user.createdAt.toLocaleDateString("en-US", {
@@ -88,6 +106,7 @@ export default async function Profile() {
           </div>
           {hasCredentialAccount && (
             <Enable2FA
+              hasPassword={hasCredentialAccount}
               twoFactorEnabled={session.user.twoFactorEnabled ?? false}
             />
           )}
