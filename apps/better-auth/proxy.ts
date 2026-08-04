@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
+import { UserRole } from "./app/generated/prisma/enums";
 import { auth } from "./lib/auth/auth";
 
 export async function proxy(request: NextRequest) {
@@ -12,7 +13,7 @@ export async function proxy(request: NextRequest) {
 
   if (
     pathname.startsWith("/dashboard/admin") &&
-    session.user.role !== "admin"
+    session.user.role !== UserRole.admin
   ) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }

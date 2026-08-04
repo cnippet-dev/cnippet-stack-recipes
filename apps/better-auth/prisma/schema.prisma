@@ -14,7 +14,7 @@ model User {
   emailVerified    Boolean   @default(false)
   twoFactorEnabled Boolean?  @default(false)
   image            String?
-  role             String?
+  role             UserRole  @default(user)
   banned           Boolean?
   banReason        String?
   banExpires       DateTime? @db.Timestamptz(3)
@@ -94,4 +94,9 @@ model TwoFactor {
   lockedUntil             DateTime? @db.Timestamptz(3)
 
   @@map("twoFactor")
+}
+
+enum UserRole {
+  user
+  admin
 }

@@ -1,6 +1,7 @@
 import { ShieldCheck } from "lucide-react";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { UserRole } from "@/app/generated/prisma/enums";
 import { Enable2FA } from "@/components/auth/enable-2fa";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -56,7 +57,9 @@ export default async function Profile() {
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Role</span>
             <Badge
-              variant={session.user.role === "ADMIN" ? "default" : "secondary"}
+              variant={
+                session.user.role === UserRole.admin ? "default" : "secondary"
+              }
             >
               {session.user.role}
             </Badge>
