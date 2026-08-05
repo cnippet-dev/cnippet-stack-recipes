@@ -41,6 +41,7 @@
   "name": "authjs",
   "private": true,
   "scripts": {
+    "check-types": "tsc --noEmit",
     "build": "next build",
     "db:generate": "prisma generate",
     "dev": "next dev",

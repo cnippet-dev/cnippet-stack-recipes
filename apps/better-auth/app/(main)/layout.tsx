@@ -7,10 +7,10 @@ export default function MainLayout({
   children: React.ReactNode;
 }) {
   return (
-    <>
+    <main className="overflow-hidden">
       <Header />
       {children}
       <Footer />
-    </>
+    </main>
   );
 }

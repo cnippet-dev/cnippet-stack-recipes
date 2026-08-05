@@ -22,6 +22,7 @@ import {
   InputGroupInput,
 } from "../ui/input-group";
 import { Separator } from "../ui/separator";
+import { Spinner } from "../ui/spinner";
 import { toastManager } from "../ui/toast";
 import { OAuthButtons } from "./oauth-buttons";
 
@@ -62,14 +63,17 @@ export function SignInForm() {
           }
         },
       });
-      if (error)
+      // On success we're navigating away — keep the spinner showing until
+      // that happens instead of flashing it off before the redirect lands.
+      if (error) {
         toastManager.add({
           title: error.message ?? "Sign in failed",
           type: "error",
         });
+        setPending(false);
+      }
     } catch {
       toastManager.add({ title: "Something went wrong", type: "error" });
-    } finally {
       setPending(false);
     }
   }
@@ -80,7 +84,7 @@ export function SignInForm() {
 
     const errorTitle =
       error === "account_not_linked"
-        ? "That email is already registered. Please verify your email, or sign in with your password instead."
+        ? "That email is already registered. Sign in with your password, then connect this provider from your profile."
         : "Sign in failed. Please try again.";
 
     setError(errorTitle);
@@ -162,6 +166,7 @@ export function SignInForm() {
               disabled={pending}
               type="submit"
             >
+              {pending && <Spinner className="size-4" />}
               {pending ? "Signing in..." : "Sign in"}
             </Button>
           </div>

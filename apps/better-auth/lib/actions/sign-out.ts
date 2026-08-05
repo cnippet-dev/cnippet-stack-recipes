@@ -1,6 +1,7 @@
 "use server";
 
 import { isAPIError } from "better-auth/api";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "../auth/auth";
 
@@ -13,7 +14,7 @@ export async function signOutAction(
   _prevState: SignOutState,
 ): Promise<SignOutState> {
   try {
-    await auth.api.signOut();
+    await auth.api.signOut({ headers: await headers() });
   } catch (error) {
     if (isAPIError(error)) {
       console.error("[signUpAction]", error.status, error.message);

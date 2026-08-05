@@ -20,6 +20,7 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group";
 import { Separator } from "@/components/ui/separator";
+import { Spinner } from "@/components/ui/spinner";
 import { authClient } from "@/lib/auth/auth-client";
 import { signUpSchema } from "@/lib/validations/auth.schema";
 import { toastManager } from "../ui/toast";
@@ -56,13 +57,15 @@ export default function SignUpForm() {
           title: error.message ?? "Sign up failed",
           type: "error",
         });
+        setPending(false);
         return;
       }
+      // On success we're navigating away — keep the spinner showing until
+      // that happens instead of flashing it off before the redirect lands.
       toastManager.add({ title: "Signup successfull!", type: "success" });
       router.push("/dashboard");
     } catch {
       toastManager.add({ title: "Something went wrong", type: "error" });
-    } finally {
       setPending(false);
     }
   }
@@ -153,7 +156,8 @@ export default function SignUpForm() {
               disabled={pending}
               type="submit"
             >
-              {pending ? "Signing in..." : "Sign in"}
+              {pending && <Spinner className="size-4" />}
+              {pending ? "Signing up..." : "Sign up"}
             </Button>
           </div>
         </form>

@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { UserRole } from "@/app/generated/prisma/enums";
 import { Enable2FA } from "@/components/auth/enable-2fa";
+import { LinkedAccounts } from "@/components/auth/linked-accounts";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -38,7 +39,7 @@ export default async function Profile() {
     .toUpperCase();
 
   return (
-    <div className="flex min-h-screen w-screen items-center justify-center bg-black px-4 py-24 text-white">
+    <div className="flex min-h-screen w-screen flex-col items-center gap-6 bg-black px-4 py-24 text-white">
       <Card className="w-full max-w-md">
         <CardHeader className="items-center text-center">
           <Avatar className="mb-2 size-16 text-xl">
@@ -115,6 +116,9 @@ export default async function Profile() {
           )}
         </CardContent>
       </Card>
+      <div className="w-full max-w-md">
+        <LinkedAccounts linkedProviders={signInMethods} />
+      </div>
     </div>
   );
 }
