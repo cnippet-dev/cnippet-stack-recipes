@@ -1,7 +1,7 @@
 "use client";
 
 import { EyeIcon, EyeOffIcon } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,6 +27,7 @@ import { OAuthButtons } from "./oauth-buttons";
 
 export default function SignUpForm() {
   const router = useRouter();
+  const pathName = usePathname();
   const [pending, setPending] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
@@ -162,7 +163,7 @@ export default function SignUpForm() {
             <span>Or continue with</span>
             <Separator className="flex-1" />
           </div>
-          <OAuthButtons />
+          <OAuthButtons path={pathName} />
         </div>
       </CardContent>
       <CardFooter>
