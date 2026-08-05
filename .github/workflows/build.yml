@@ -11,6 +11,14 @@ env:
   NEXT_TELEMETRY_DISABLED: 1
   DATABASE_URL: postgresql://user:password@localhost:5432/db
   AUTH_SECRET: build-only-placeholder-secret
+  BETTER_AUTH_SECRET: build-only-placeholder-secret
+  BETTER_AUTH_URL: http://localhost:3000
+  GITHUB_CLIENT_ID: build-only-placeholder
+  GITHUB_CLIENT_SECRET: build-only-placeholder
+  GOOGLE_CLIENT_ID: build-only-placeholder
+  GOOGLE_CLIENT_SECRET: build-only-placeholder
+  NEXT_PUBLIC_APP_URL: http://localhost:3000
+  NEXT_PUBLIC_BETTER_AUTH_URL: http://localhost:3000
 
 jobs:
   build:
