@@ -19,7 +19,7 @@
       "outputs": [".next/**", "!.next/cache/**", "!.next/dev/**"]
     },
     "check-types": {
-      "dependsOn": ["^check-types"]
+      "dependsOn": ["^check-types", "db:generate"]
     },
     "db:generate": {
       "cache": true,
