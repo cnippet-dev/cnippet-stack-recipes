@@ -4,7 +4,7 @@ import { GitBranch } from "lucide-react";
 import { authClient } from "@/lib/auth/auth-client";
 import { Button } from "../ui/button";
 
-export function OAuthButtons() {
+export function OAuthButtons({ path }: { path: string }) {
   return (
     <div className="flex max-w-full rounded-sm border border-white/60">
       {(["google", "github"] as const).map((provider) => (
@@ -12,7 +12,11 @@ export function OAuthButtons() {
           className="w-1/2 rounded-xs"
           key={provider}
           onClick={() =>
-            authClient.signIn.social({ callbackURL: "/dashboard", provider })
+            authClient.signIn.social({
+              callbackURL: "/dashboard",
+              errorCallbackURL: path,
+              provider,
+            })
           }
           type="submit"
           variant="outline"

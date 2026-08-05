@@ -1,8 +1,8 @@
 "use client";
 
 import { EyeIcon, EyeOffIcon } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { authClient } from "@/lib/auth/auth-client";
 import { signInSchema } from "@/lib/validations/auth.schema";
 import { Button } from "../ui/button";
@@ -27,8 +27,11 @@ import { OAuthButtons } from "./oauth-buttons";
 
 export function SignInForm() {
   const router = useRouter();
+  const pathName = usePathname();
+  const searchParams = useSearchParams();
   const [pending, setPending] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
+  const [error, setError] = useState<string>("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -70,6 +73,19 @@ export function SignInForm() {
       setPending(false);
     }
   }
+
+  useEffect(() => {
+    const error = searchParams.get("error");
+    if (!error) return;
+
+    const errorTitle =
+      error === "account_not_linked"
+        ? "That email is already registered. Please verify your email, or sign in with your password instead."
+        : "Sign in failed. Please try again.";
+
+    setError(errorTitle);
+    router.replace("/login", { scroll: false });
+  }, [searchParams, router]);
 
   return (
     <Card className="mx-auto w-full max-w-xs">
@@ -156,7 +172,10 @@ export function SignInForm() {
             <span>Or continue with</span>
             <Separator className="flex-1" />
           </div>
-          <OAuthButtons />
+          <OAuthButtons path={pathName} />
+          {error.trim() !== "" && (
+            <p className="text-center text-red-500 text-xs">{error}</p>
+          )}
         </div>
       </CardContent>
       <CardFooter>
