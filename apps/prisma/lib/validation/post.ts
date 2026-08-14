@@ -42,3 +42,5 @@ export const getPostsQuerySchema = z.object({
 export const postIdParamSchema = z.object({
   id: z.coerce.number().int().positive(),
 });
+
+export const updatePostSchema = createPostSchema.partial();
