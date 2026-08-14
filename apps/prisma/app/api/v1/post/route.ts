@@ -1,17 +1,11 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { Prisma } from "@/app/generated/prisma/client";
-import { getCurrentUser } from "@/lib/actions/get_current_user";
 import prisma from "@/lib/db/prisma";
 import { createPostSchema, getPostsQuerySchema } from "@/lib/validation/post";
 
 export async function POST(req: NextRequest) {
   try {
-    const user = await getCurrentUser();
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     let body: unknown;
     try {
       body = await req.json();
@@ -21,9 +15,8 @@ export async function POST(req: NextRequest) {
 
     const data = createPostSchema.parse(body);
 
-    const post = prisma.post.create({
+    const post = await prisma.post.create({
       data: {
-        authorId: user.id,
         content: data.content,
         metadata: data.metadata as Prisma.InputJsonValue | undefined,
         published: data.published,
@@ -34,9 +27,6 @@ export async function POST(req: NextRequest) {
         title: data.title,
       },
       include: {
-        author: {
-          select: { email: true, id: true, name: true },
-        },
         tags: true,
       },
     });

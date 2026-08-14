@@ -7,20 +7,20 @@ datasource db {
     provider = "postgresql"
 }
 
-model User {
-    id    Int    @id
-    name  String
-    email String
+// model User {
+//     id    Int    @id
+//     name  String
+//     email String
 
-    posts   Post[]
-    profile Profile?
+//     posts   Post[]
+//     profile Profile?
 
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+//     createdAt DateTime @default(now())
+//     updatedAt DateTime @updatedAt
 
-    @@unique([email])
-    @@map("user")
-}
+//     @@unique([email])
+//     @@map("user")
+// }
 
 model Post {
     id        Int     @id @default(autoincrement())
@@ -35,23 +35,20 @@ model Post {
     updatedAt DateTime @updatedAt
     metadata  Json?
 
-    authorId Int
-    author   User @relation(fields: [authorId], references: [id])
-
     @@unique([slug])
     @@index([published, createdAt])
     @@map("posts")
 }
 
-model Profile {
-    id  String  @id
-    bio String?
+// model Profile {
+//     id  String  @id
+//     bio String?
 
-    user   User @relation(fields: [userId], references: [id])
-    userId Int
+//     user   User @relation(fields: [userId], references: [id])
+//     userId Int
 
-    @@unique([userId])
-}
+//     @@unique([userId])
+// }
 
 model Tag {
     id   String @id
