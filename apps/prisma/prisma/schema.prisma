@@ -1,73 +1,72 @@
-// generator client {
-//   provider = "prisma-client"
-//   output   = "../app/generated/prisma"
-// }
+generator client {
+    provider = "prisma-client"
+    output   = "../app/generated/prisma"
+}
 
-// datasource db {
-//   provider = "postgresql"
-// }
+datasource db {
+    provider = "postgresql"
+}
 
-// model User {
-//   id    Int    @id
-//   name  String
-//   email String
+model User {
+    id    Int    @id
+    name  String
+    email String
 
-//   posts   Post[]
-//   profile Profile?
+    posts   Post[]
+    profile Profile?
 
-//   createdAt DateTime @default(now())
-//   updatedAt DateTime @updatedAt
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
 
-//   @@unique([email])
-//   @@map("user")
-// }
+    @@unique([email])
+    @@map("user")
+}
 
-// model Post {
-//   id        Int     @id @default(autoincrement())
-//   title     String  @db.VarChar(200)
-//   slug      String
-//   content   String
-//   published Boolean @default(false)
-//   views     Int     @default(0)
+model Post {
+    id        Int     @id @default(autoincrement())
+    title     String  @db.VarChar(200)
+    slug      String
+    content   String
+    published Boolean @default(false)
+    views     Int     @default(0)
+    tags      Tag[]
 
-//   createdAt DateTime @default(now())
-//   updatedAt DateTime @updatedAt
-//   metadata  Json?
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    metadata  Json?
 
-//   authorId Int
-//   author   User    @relation(fields: [authorId], references: [id])
-//   tagId    String?
-//   tag      Tag?    @relation(fields: [tagId], references: [id])
+    authorId Int
+    author   User @relation(fields: [authorId], references: [id])
 
-//   @@unique([slug])
-//   @@index([published, createdAt])
-//   @@map("posts")
-// }
+    @@unique([slug])
+    @@index([published, createdAt])
+    @@map("posts")
+}
 
-// model Profile {
-//   id  String  @id
-//   bio String?
+model Profile {
+    id  String  @id
+    bio String?
 
-//   user   User @relation(fields: [userId], references: [id])
-//   userId Int
+    user   User @relation(fields: [userId], references: [id])
+    userId Int
 
-//   @@unique([userId])
-// }
+    @@unique([userId])
+}
 
-// model Tag {
-//   id   String @id
-//   name String
+model Tag {
+    id   String @id
+    name String
 
-//   posts Post[]
+    posts Post[]
 
-//   @@unique([name])
-// }
+    @@unique([name])
+}
 
-// model Comment {
-//   id       String   @id
-//   body     String
-//   parent   Comment? @relation("Replies", fields: [parentId], references: [id])
-//   parentId String?
+model Comment {
+    id       String   @id
+    body     String
+    parent   Comment? @relation("Replies", fields: [parentId], references: [id])
+    parentId String?
 
-//   replies Comment[] @relation("Replies")
-// }
+    replies Comment[] @relation("Replies")
+}
