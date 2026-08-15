@@ -73,7 +73,6 @@ export async function GET(req: NextRequest) {
 
     const where: Prisma.PostWhereInput = {
       ...(query.published !== undefined && { published: query.published }),
-      ...(query.authorId && { authorId: query.authorId }),
       ...(query.tag && { tags: { some: { name: query.tag } } }),
       ...(query.search && {
         OR: [
@@ -88,7 +87,6 @@ export async function GET(req: NextRequest) {
     const [posts, total] = await Promise.all([
       prisma.post.findMany({
         include: {
-          author: { select: { email: true, id: true, name: true } },
           tags: { select: { id: true, name: true } },
         },
         orderBy: { [query.sortBy]: query.sortOrder },

@@ -24,7 +24,6 @@ export const createPostSchema = z.object({
 export type CreatePostInput = z.infer<typeof createPostSchema>;
 
 export const getPostsQuerySchema = z.object({
-  authorId: z.coerce.number().int().positive().optional(),
   limit: z.coerce.number().int().positive().max(100).default(10),
   page: z.coerce.number().int().positive().default(1),
   published: z
