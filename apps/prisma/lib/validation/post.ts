@@ -3,7 +3,6 @@ import { z } from "zod";
 export const createPostSchema = z.object({
   content: z.string().trim().min(1, "Content is required"),
   metadata: z.record(z.string(), z.unknown()).optional(),
-  published: z.boolean().optional().default(false),
   slug: z
     .string()
     .trim()
@@ -13,7 +12,7 @@ export const createPostSchema = z.object({
       /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
       "Slug must be lowercase, alphanumeric, and hyphen-separated",
     ),
-  tagIds: z.array(z.string().min(1)).optional().default([]),
+  tags: z.array(z.string().trim().min(1).max(20)).optional().default([]),
   title: z
     .string()
     .trim()
@@ -26,10 +25,6 @@ export type CreatePostInput = z.infer<typeof createPostSchema>;
 export const getPostsQuerySchema = z.object({
   limit: z.coerce.number().int().positive().max(100).default(10),
   page: z.coerce.number().int().positive().default(1),
-  published: z
-    .enum(["true", "false"])
-    .optional()
-    .transform((val) => (val === undefined ? undefined : val === "true")),
   search: z.string().trim().min(1).max(200).optional(),
   sortBy: z
     .enum(["createdAt", "updatedAt", "views", "title"])

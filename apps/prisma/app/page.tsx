@@ -12,7 +12,7 @@ export default function Home() {
       <div className="flex h-screen w-screen justify-center bg-foreground text-background">
         <div className="w-7xl max-w-7xl">
           <h1>Cnippet</h1>
-          <div className="flex justify-between">
+          <div className="flex flex-1 shrink-0 justify-between">
             <Create />
             <Read />
             <Update />

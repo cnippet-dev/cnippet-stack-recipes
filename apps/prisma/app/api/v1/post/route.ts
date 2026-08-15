@@ -19,10 +19,14 @@ export async function POST(req: NextRequest) {
       data: {
         content: data.content,
         metadata: data.metadata as Prisma.InputJsonValue | undefined,
-        published: data.published,
         slug: data.slug,
-        tags: data.tagIds.length
-          ? { connect: data.tagIds.map((id) => ({ id })) }
+        tags: data.tags?.length
+          ? {
+              connectOrCreate: data.tags.map((name) => ({
+                create: { name },
+                where: { name },
+              })),
+            }
           : undefined,
         title: data.title,
       },
@@ -72,7 +76,6 @@ export async function GET(req: NextRequest) {
     const query = getPostsQuerySchema.parse(searchParams);
 
     const where: Prisma.PostWhereInput = {
-      ...(query.published !== undefined && { published: query.published }),
       ...(query.tag && { tags: { some: { name: query.tag } } }),
       ...(query.search && {
         OR: [

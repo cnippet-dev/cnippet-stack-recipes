@@ -20,6 +20,8 @@ import {
 } from "../ui/card";
 import { Spinner } from "../ui/spinner";
 
+// TODO Fix accordion shift
+
 type TagType = {
   id: string;
   name: string;
@@ -40,12 +42,9 @@ export function Read() {
   const handleFetch = async () => {
     try {
       setLoading(true);
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_APP_URL}/api/v1/post`,
-        {
-          cache: "no-store",
-        },
-      );
+      const res = await fetch("/api/v1/post", {
+        cache: "no-store",
+      });
 
       if (!res.ok) {
         throw new Error(`Error fetching posts: ${res.status}`);
@@ -61,7 +60,7 @@ export function Read() {
   };
 
   return (
-    <Card className="h-fit">
+    <Card className="h-fit w-fit">
       <CardHeader>
         <CardTitle className="flex items-end gap-0 tracking-tighter">
           <p className="font-semibold text-4xl">R</p>
@@ -77,12 +76,13 @@ export function Read() {
             <Accordion className="w-full">
               {posts.slice(0, 4).map((post) => (
                 <AccordionItem key={post.id} value={String(post.id)}>
-                  <AccordionTrigger>
-                    <div className="flex items-center gap-2">
-                      {post.title}
+                  <AccordionTrigger className="w-full">
+                    <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+                      <span className="min-w-0 truncate">{post.title}</span>
+
                       {post.tags.map((tag, id) => (
                         <Badge
-                          className="text-muted-foreground"
+                          className="shrink-0 text-muted-foreground"
                           key={id}
                           style={{ fontSize: 11 }}
                           variant="outline"
@@ -92,7 +92,10 @@ export function Read() {
                       ))}
                     </div>
                   </AccordionTrigger>
-                  <AccordionPanel>{post.content}</AccordionPanel>
+
+                  <AccordionPanel className="min-w-0">
+                    <div className="break-words">{post.content}</div>
+                  </AccordionPanel>
                 </AccordionItem>
               ))}
             </Accordion>

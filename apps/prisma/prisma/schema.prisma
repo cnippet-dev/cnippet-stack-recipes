@@ -8,39 +8,27 @@ datasource db {
 }
 
 model Post {
-    id        Int     @id @default(autoincrement())
-    title     String  @db.VarChar(200)
-    slug      String
-    content   String
-    // Remove published views
-    published Boolean @default(false)
-    views     Int     @default(0)
-    tags      Tag[]
+    id      Int    @id @default(autoincrement())
+    title   String @db.VarChar(200)
+    slug    String @db.VarChar(200)
+    content String @db.Text
+    tags    Tag[]
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
     metadata  Json?
 
     @@unique([slug])
-    @@index([published, createdAt])
+    @@index([createdAt])
     @@map("posts")
 }
 
 model Tag {
-    id   String @id
-    name String
+    id   String @id @default(uuid())
+    name String @db.VarChar(200)
 
     posts Post[]
 
     @@unique([name])
-}
-
-// remove comment
-model Comment {
-    id       String   @id
-    body     String
-    parent   Comment? @relation("Replies", fields: [parentId], references: [id])
-    parentId String?
-
-    replies Comment[] @relation("Replies")
+    @@map("tags")
 }
