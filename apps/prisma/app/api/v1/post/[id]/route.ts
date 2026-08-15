@@ -54,15 +54,14 @@ export async function GET({ params }: RouteContext) {
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const user = await getCurrentUser();
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const { id } = await params;
+    const idNum = Number(id);
+    if (!Number.isInteger(idNum)) {
+      return NextResponse.json({ error: "Invalid post id" }, { status: 400 });
     }
-
-    const { id } = params;
 
     let body: unknown;
     try {
@@ -73,40 +72,26 @@ export async function PATCH(
 
     const data = updatePostSchema.parse(body);
 
-    const existing = await prisma.post.findUnique({
-      select: { authorId: true },
-      where: { id: Number.parseInt(id, 10) },
-    });
-
-    if (!existing) {
-      return NextResponse.json({ error: "Post not found" }, { status: 404 });
-    }
-
-    if (existing.authorId !== user.id) {
-      return NextResponse.json(
-        { error: "You do not have permission to edit this post" },
-        { status: 403 },
-      );
-    }
-
     const post = await prisma.post.update({
       data: {
-        content: data.content,
-        metadata: data.metadata as Prisma.InputJsonValue | undefined,
-        published: data.published,
-        slug: data.slug,
-        title: data.title,
-        ...(data.tagIds && {
-          tags: { set: data.tagIds.map((tagId) => ({ id: tagId })) },
+        ...(data.content !== undefined && { content: data.content }),
+        ...(data.metadata !== undefined && {
+          metadata: data.metadata as Prisma.InputJsonValue,
+        }),
+        ...(data.slug !== undefined && { slug: data.slug }),
+        ...(data.title !== undefined && { title: data.title }),
+        ...(data.tags !== undefined && {
+          tags: {
+            connectOrCreate: data.tags.map((name) => ({
+              create: { name },
+              where: { name },
+            })),
+            set: [],
+          },
         }),
       },
-      include: {
-        author: {
-          select: { email: true, id: true, name: true },
-        },
-        tags: true,
-      },
-      where: { id: Number.parseInt(id, 10) },
+      include: { tags: true },
+      where: { id: idNum },
     });
 
     return NextResponse.json({ data: post }, { status: 200 });
@@ -126,63 +111,57 @@ export async function PATCH(
         );
       }
       if (error.code === "P2025") {
-        return NextResponse.json(
-          {
-            error:
-              "One or more referenced records were not found (e.g. invalid tagId)",
-          },
-          { status: 400 },
-        );
-      }
-    }
-
-    console.error("[PATCH /api/v1/post/[id]]", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
-  }
-}
-
-export async function DELETE({ params }: { params: { id: string } }) {
-  try {
-    const user = await getCurrentUser();
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const { id } = params;
-
-    const existing = await prisma.post.findUnique({
-      select: { authorId: true },
-      where: { id: Number.parseInt(id, 10) },
-    });
-
-    if (!existing) {
-      return NextResponse.json({ error: "Post not found" }, { status: 404 });
-    }
-
-    if (existing.authorId !== user.id) {
-      return NextResponse.json(
-        { error: "You do not have permission to delete this post" },
-        { status: 403 },
-      );
-    }
-
-    await prisma.post.delete({ where: { id: Number.parseInt(id, 10) } });
-
-    return new NextResponse(null, { status: 204 });
-  } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === "P2025") {
         return NextResponse.json({ error: "Post not found" }, { status: 404 });
       }
     }
 
-    console.error("[DELETE /api/v1/post/[id]]", error);
+    console.error("[PATCH /api/v1/post/:id]", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },
     );
   }
 }
+
+// export async function DELETE({ params }: { params: { id: string } }) {
+//   try {
+//     const user = await getCurrentUser();
+//     if (!user) {
+//       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+//     }
+
+//     const { id } = params;
+
+//     const existing = await prisma.post.findUnique({
+//       select: { authorId: true },
+//       where: { id: Number.parseInt(id, 10) },
+//     });
+
+//     if (!existing) {
+//       return NextResponse.json({ error: "Post not found" }, { status: 404 });
+//     }
+
+//     if (existing.authorId !== user.id) {
+//       return NextResponse.json(
+//         { error: "You do not have permission to delete this post" },
+//         { status: 403 },
+//       );
+//     }
+
+//     await prisma.post.delete({ where: { id: Number.parseInt(id, 10) } });
+
+//     return new NextResponse(null, { status: 204 });
+//   } catch (error) {
+//     if (error instanceof Prisma.PrismaClientKnownRequestError) {
+//       if (error.code === "P2025") {
+//         return NextResponse.json({ error: "Post not found" }, { status: 404 });
+//       }
+//     }
+
+//     console.error("[DELETE /api/v1/post/[id]]", error);
+//     return NextResponse.json(
+//       { error: "Internal server error" },
+//       { status: 500 },
+//     );
+//   }
+// }
