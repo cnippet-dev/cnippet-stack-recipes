@@ -1,6 +1,6 @@
 "use client";
 
-import { CircleAlertIcon, Form, PenIcon } from "lucide-react";
+import { CircleAlertIcon, PenIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import {
   Accordion,
@@ -20,21 +20,16 @@ import {
 } from "../ui/card";
 import {
   Dialog,
-  DialogClose,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogPanel,
-  DialogPopup,
   DialogTitle,
-  DialogTrigger,
 } from "../ui/dialog";
-import { Field, FieldLabel } from "../ui/field";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Spinner } from "../ui/spinner";
 import { Textarea } from "../ui/textarea";
+import { toastManager } from "../ui/toast";
 
 // TODO Fix accordion shift
 
@@ -73,7 +68,7 @@ export function Update() {
 
     try {
       setFetching(true);
-      const res = await fetch("/api/v1/post", {
+      const res = await fetch("/api/v1/post?page=1&limit=4", {
         cache: "no-store",
         signal: controller.signal,
       });
@@ -84,10 +79,11 @@ export function Update() {
 
       const json = await res.json();
       setPosts(Array.isArray(json.data) ? json.data : []);
+      toastManager.add({ title: "Posts loaded.", type: "success" });
     } catch (error) {
       if ((error as Error).name === "AbortError") return;
       console.error(error);
-      // toast.error("Failed to load posts");
+      toastManager.add({ title: "Failed to load posts.", type: "error" });
     } finally {
       setFetching(false);
     }
@@ -125,11 +121,11 @@ export function Update() {
       setPosts((currentPosts) =>
         currentPosts.map((post) => (post.id === id ? updatedPost : post)),
       );
-      // toast.success("Post updated");
+      toastManager.add({ title: "Post updated", type: "success" });
       setEditingPost(null);
     } catch (error) {
       console.error(error);
-      // toast.error("Failed to update post");
+      toastManager.add({ title: "Failed to update post.", type: "error" });
     } finally {
       setUpdatingId(null);
     }
@@ -150,7 +146,7 @@ export function Update() {
           </CardHeader>
           <CardPanel>
             <Accordion className="w-full">
-              {posts.slice(0, 4).map((post) => (
+              {posts.map((post) => (
                 <AccordionItem key={post.id} value={String(post.id)}>
                   <AccordionTrigger className="w-full">
                     <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
@@ -227,7 +223,7 @@ export function Update() {
             <DialogTitle>Edit post</DialogTitle>
           </DialogHeader>
 
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4 px-6 pb-4">
             <div className="flex flex-col gap-2">
               <Label htmlFor="title">Title</Label>
               <Input

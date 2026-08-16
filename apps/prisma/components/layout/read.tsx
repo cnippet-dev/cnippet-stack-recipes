@@ -1,7 +1,7 @@
 "use client";
 
 import { CircleAlertIcon } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Accordion,
   AccordionItem,
@@ -19,6 +19,7 @@ import {
   CardTitle,
 } from "../ui/card";
 import { Spinner } from "../ui/spinner";
+import { toastManager } from "../ui/toast";
 
 // TODO Fix accordion shift
 
@@ -39,11 +40,22 @@ export function Read() {
   const [posts, setPosts] = useState<PostType[]>([]);
   const [loading, setLoading] = useState(false);
 
+  const abortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    return () => abortRef.current?.abort();
+  }, []);
+
   const handleFetch = async () => {
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     try {
       setLoading(true);
-      const res = await fetch("/api/v1/post", {
+      const res = await fetch("/api/v1/post?page=1&limit=4", {
         cache: "no-store",
+        signal: controller.signal,
       });
 
       if (!res.ok) {
@@ -51,9 +63,12 @@ export function Read() {
       }
 
       const json = await res.json();
-      setPosts(json.data);
+      setPosts(Array.isArray(json.data) ? json.data : []);
+      toastManager.add({ title: "Posts loaded.", type: "success" });
     } catch (error) {
-      console.log(error);
+      if ((error as Error).name === "AbortError") return;
+      console.error(error);
+      toastManager.add({ title: "Failed to load posts.", type: "error" });
     } finally {
       setLoading(false);
     }
@@ -74,7 +89,7 @@ export function Read() {
           </CardHeader>
           <CardPanel>
             <Accordion className="w-full">
-              {posts.slice(0, 4).map((post) => (
+              {posts.map((post) => (
                 <AccordionItem key={post.id} value={String(post.id)}>
                   <AccordionTrigger className="w-full">
                     <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
