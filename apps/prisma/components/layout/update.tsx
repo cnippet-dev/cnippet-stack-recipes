@@ -2,6 +2,7 @@
 
 import { CircleAlertIcon, PenIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { fetchPostsAction, updatePostsAction } from "@/lib/actions/dal";
 import {
   Accordion,
   AccordionItem,
@@ -68,16 +69,8 @@ export function Update() {
 
     try {
       setFetching(true);
-      const res = await fetch("/api/v1/post?page=1&limit=4", {
-        cache: "no-store",
-        signal: controller.signal,
-      });
 
-      if (!res.ok) {
-        throw new Error(`Error fetching posts: ${res.status}`);
-      }
-
-      const json = await res.json();
+      const json = await fetchPostsAction();
       setPosts(Array.isArray(json.data) ? json.data : []);
       toastManager.add({ title: "Posts loaded.", type: "success" });
     } catch (error) {
@@ -102,21 +95,10 @@ export function Update() {
     try {
       setUpdatingId(id);
 
-      const res = await fetch(`/api/v1/post/${id}`, {
-        body: JSON.stringify({ content: draftContent, title: draftTitle }),
-        cache: "no-store",
-        headers: { "Content-Type": "application/json" },
-        method: "PATCH",
+      const updatedPost = await updatePostsAction(id, {
+        content: draftContent,
+        title: draftTitle,
       });
-
-      if (!res.ok) {
-        throw new Error(
-          `Failed to update post: ${res.status} ${res.statusText}`,
-        );
-      }
-
-      const json = await res.json();
-      const updatedPost = json.data;
 
       setPosts((currentPosts) =>
         currentPosts.map((post) => (post.id === id ? updatedPost : post)),
@@ -135,8 +117,8 @@ export function Update() {
     <Card className="h-fit w-fit">
       <CardHeader>
         <CardTitle className="flex items-end gap-0 tracking-tighter">
-          <p className="font-semibold text-4xl">R</p>
-          <p className="text-lg">ead</p>
+          <p className="font-semibold text-4xl">U</p>
+          <p className="text-lg">pdate</p>
         </CardTitle>
       </CardHeader>
       <CardContent>

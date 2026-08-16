@@ -2,6 +2,7 @@
 
 import { CircleAlertIcon, XIcon } from "lucide-react";
 import { type KeyboardEvent, useState } from "react";
+import { createPostAction } from "@/lib/actions/dal";
 import { Button } from "../ui/button";
 import {
   Card,
@@ -15,6 +16,8 @@ import { Field, FieldLabel } from "../ui/field";
 import { Form } from "../ui/form";
 import { Input } from "../ui/input";
 import { Spinner } from "../ui/spinner";
+import { Textarea } from "../ui/textarea";
+import { toastManager } from "../ui/toast";
 
 export function Create() {
   const [loading, setLoading] = useState<boolean>(false);
@@ -61,26 +64,23 @@ export function Create() {
 
     try {
       setLoading(true);
-
-      const res = await fetch("/api/v1/post", {
-        body: JSON.stringify(payload),
-        cache: "no-store",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        method: "POST",
+      await createPostAction({
+        content: payload.content,
+        slug: payload.slug,
+        tags: payload.tags,
+        title: payload.title,
       });
 
-      if (!res.ok) {
-        throw new Error(
-          `Failed to create post: ${res.status} ${res.statusText}`,
-        );
-      }
+      toastManager.add({
+        title: "Post created successfully.",
+        type: "success",
+      });
 
       form.reset();
       setTags([]);
       setTagInput("");
     } catch (error) {
+      toastManager.add({ title: "Failed to create post.", type: "error" });
       console.error(error);
     } finally {
       setLoading(false);
@@ -125,12 +125,11 @@ export function Create() {
               </Field>
               <Field>
                 <FieldLabel>Content</FieldLabel>
-                <Input
-                  className="h-24"
+                <Textarea
                   name="content"
                   placeholder="Content of your post"
                   required
-                  type="text"
+                  rows={10}
                 />
               </Field>
               <Field>

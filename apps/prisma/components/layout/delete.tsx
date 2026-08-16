@@ -2,6 +2,7 @@
 
 import { CircleAlertIcon, InfoIcon, Trash2Icon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { deletePostAction, fetchPostsAction } from "@/lib/actions/dal";
 import {
   Accordion,
   AccordionItem,
@@ -62,16 +63,8 @@ export function Delete() {
 
     try {
       setFetching(true);
-      const res = await fetch("/api/v1/post?page=1&limit=4", {
-        cache: "no-store",
-        signal: controller.signal,
-      });
 
-      if (!res.ok) {
-        throw new Error(`Error fetching posts: ${res.status}`);
-      }
-
-      const json = await res.json();
+      const json = await fetchPostsAction();
       setPosts(Array.isArray(json.data) ? json.data : []);
       toastManager.add({ title: "Posts loaded.", type: "success" });
     } catch (error) {
@@ -87,29 +80,23 @@ export function Delete() {
     setDeletingPost(post);
   };
 
-  const handleUpdate = async () => {
+  const handleDelete = async () => {
     if (!deletingPost) return;
     const id = deletingPost.id;
+    const prevPosts = posts;
+
+    setPosts(posts.filter((post) => post.id !== id));
 
     try {
       setDeletingId(id);
 
-      const res = await fetch(`/api/v1/post/${id}`, {
-        cache: "no-store",
-        headers: { "Content-Type": "application/json" },
-        method: "DELETE",
-      });
-
-      if (!res.ok) {
-        throw new Error(
-          `Failed to update post: ${res.status} ${res.statusText}`,
-        );
-      }
+      await deletePostAction(id);
 
       toastManager.add({ title: "Post deleted", type: "success" });
       setDeletingPost(null);
     } catch (error) {
       console.error(error);
+      setPosts(prevPosts);
       toastManager.add({ title: "Failed to delete post.", type: "error" });
     } finally {
       setDeletingId(null);
@@ -120,8 +107,8 @@ export function Delete() {
     <Card className="h-fit w-fit">
       <CardHeader>
         <CardTitle className="flex items-end gap-0 tracking-tighter">
-          <p className="font-semibold text-4xl">R</p>
-          <p className="text-lg">ead</p>
+          <p className="font-semibold text-4xl">D</p>
+          <p className="text-lg">elete</p>
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -213,14 +200,14 @@ export function Delete() {
           <DialogFooter>
             <Button
               disabled={deletingId !== null}
-              onClick={() => setDeletingId(null)}
+              onClick={() => setDeletingPost(null)}
               variant="outline"
             >
               Cancel
             </Button>
             <Button
               disabled={deletingId !== null}
-              onClick={handleUpdate}
+              onClick={handleDelete}
               variant="destructive"
             >
               {deletingId !== null ? <Spinner /> : "Delete"}

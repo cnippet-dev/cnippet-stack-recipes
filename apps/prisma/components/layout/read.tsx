@@ -2,6 +2,7 @@
 
 import { CircleAlertIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { fetchPostsAction } from "@/lib/actions/dal";
 import {
   Accordion,
   AccordionItem,
@@ -53,16 +54,8 @@ export function Read() {
 
     try {
       setLoading(true);
-      const res = await fetch("/api/v1/post?page=1&limit=4", {
-        cache: "no-store",
-        signal: controller.signal,
-      });
+      const json = await fetchPostsAction();
 
-      if (!res.ok) {
-        throw new Error(`Error fetching posts: ${res.status}`);
-      }
-
-      const json = await res.json();
       setPosts(Array.isArray(json.data) ? json.data : []);
       toastManager.add({ title: "Posts loaded.", type: "success" });
     } catch (error) {
