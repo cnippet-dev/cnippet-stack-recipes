@@ -4,11 +4,10 @@ import { Prisma } from "@/app/generated/prisma/client";
 import prisma from "@/lib/db/prisma";
 import { postIdParamSchema, updatePostSchema } from "@/lib/validation/post";
 
-interface RouteContext {
-  params: Promise<{ id: string }>;
-}
-
-export async function GET({ params }: RouteContext) {
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
   try {
     const { id } = await params;
 
@@ -19,7 +18,6 @@ export async function GET({ params }: RouteContext) {
 
     const post = await prisma.post.findUnique({
       include: {
-        author: { select: { email: true, id: true, name: true } },
         tags: { select: { id: true, name: true } },
       },
       where: { id: parsed.data.id },
@@ -28,13 +26,6 @@ export async function GET({ params }: RouteContext) {
     if (!post) {
       return NextResponse.json({ error: "Post not found" }, { status: 404 });
     }
-
-    prisma.post
-      .update({
-        data: { views: { increment: 1 } },
-        where: { id: post.id },
-      })
-      .catch((err) => console.error("[views increment]", err));
 
     return NextResponse.json({ data: post });
   } catch (error) {

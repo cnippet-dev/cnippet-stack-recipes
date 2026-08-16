@@ -19,6 +19,7 @@ env:
   GOOGLE_CLIENT_SECRET: build-only-placeholder
   NEXT_PUBLIC_APP_URL: http://localhost:3000
   NEXT_PUBLIC_BETTER_AUTH_URL: http://localhost:3000
+  API_URL: http://localhost:3000
 
 jobs:
   build:

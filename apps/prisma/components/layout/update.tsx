@@ -32,8 +32,6 @@ import { Spinner } from "../ui/spinner";
 import { Textarea } from "../ui/textarea";
 import { toastManager } from "../ui/toast";
 
-// TODO Fix accordion shift
-
 type TagType = {
   id: string;
   name: string;
