@@ -1,6 +1,11 @@
 "use client";
 
-import { CircleAlertIcon } from "lucide-react";
+import {
+  BookTextIcon,
+  CircleAlertIcon,
+  DownloadIcon,
+  ListIcon,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { fetchPostsAction } from "@/lib/actions/dal";
 import {
@@ -68,56 +73,88 @@ export function Read() {
   };
 
   return (
-    <Card className="h-fit w-fit">
-      <CardHeader>
+    <Card className="h-fit w-[320px] min-w-0 max-w-full">
+      <CardHeader style={{ padding: "16px", paddingBottom: 0 }}>
         <CardTitle className="flex items-end gap-0 tracking-tighter">
           <p className="font-semibold text-4xl">R</p>
           <p className="text-lg">ead</p>
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <Card className="w-full max-w-xs">
-          <CardHeader>
-            <CardTitle>Get all posts.</CardTitle>
-          </CardHeader>
-          <CardPanel>
-            <Accordion className="w-full">
-              {posts.map((post) => (
-                <AccordionItem key={post.id} value={String(post.id)}>
-                  <AccordionTrigger className="w-full">
-                    <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-                      <span className="min-w-0 truncate">{post.title}</span>
 
-                      {post.tags.map((tag, id) => (
-                        <Badge
-                          className="shrink-0 text-muted-foreground"
-                          key={id}
-                          style={{ fontSize: 11 }}
-                          variant="outline"
-                        >
-                          {tag.name}
-                        </Badge>
-                      ))}
-                    </div>
-                  </AccordionTrigger>
+      <CardContent
+        className="min-w-0"
+        style={{ padding: "16px", paddingTop: 0 }}
+      >
+        <CardTitle className="flex items-center gap-1 text-muted-foreground text-sm">
+          <ListIcon className="size-3 text-blue-500" strokeWidth={3} />
+          <p className="font-medium tracking-tight">Get all posts.</p>
+        </CardTitle>
 
-                  <AccordionPanel className="min-w-0">
-                    <div className="break-words">{post.content}</div>
-                  </AccordionPanel>
-                </AccordionItem>
-              ))}
-            </Accordion>
-          </CardPanel>
-          <CardFooter className="flex-col gap-4">
-            <Button className="w-full" disabled={loading} onClick={handleFetch}>
-              {loading ? <Spinner /> : <>Get</>}
-            </Button>
-            <div className="flex gap-1 text-muted-foreground text-xs">
-              <CircleAlertIcon className="size-3 h-lh shrink-0" />
-              <p>This might take a few seconds to complete.</p>
-            </div>
-          </CardFooter>
-        </Card>
+        <CardPanel className="mb-4 min-w-0 p-0">
+          <Accordion className="w-full min-w-0 rounded-lg last:border-b-1">
+            {posts.map((post) => (
+              <AccordionItem
+                className="mt-2 min-w-0 rounded-lg border p-2"
+                key={post.id}
+                value={String(post.id)}
+              >
+                <AccordionTrigger className="w-full min-w-0 py-0">
+                  <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+                    <span className="flex min-w-0 items-center gap-2 truncate">
+                      <Badge
+                        // asChild
+                        className="cursor-pointer"
+                        variant="success"
+                      >
+                        <span role="button" tabIndex={0}>
+                          <BookTextIcon className="size-3" />
+                        </span>
+                      </Badge>
+                      {post.title}
+                    </span>
+
+                    {post.tags.map((tag, id) => (
+                      <Badge
+                        className="shrink-0 text-muted-foreground"
+                        key={id}
+                        style={{ fontSize: 11 }}
+                        variant="outline"
+                      >
+                        {tag.name}
+                      </Badge>
+                    ))}
+                  </div>
+                </AccordionTrigger>
+
+                <AccordionPanel className="min-w-0 max-w-full py-1">
+                  <div className="max-w-full [overflow-wrap:anywhere]">
+                    {post.content}
+                  </div>
+                </AccordionPanel>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </CardPanel>
+
+        <CardFooter
+          className="flex-col gap-2 px-0"
+          style={{ padding: "4px 0 0 0" }}
+        >
+          <Button className="w-full" disabled={loading} onClick={handleFetch}>
+            {loading ? (
+              <Spinner />
+            ) : (
+              <>
+                <DownloadIcon /> Get Posts
+              </>
+            )}
+          </Button>
+
+          <div className="flex gap-1 truncate text-muted-foreground text-xs">
+            <CircleAlertIcon className="size-3 h-lh shrink-0" />
+            <p>This might take a few seconds to complete.</p>
+          </div>
+        </CardFooter>
       </CardContent>
     </Card>
   );
