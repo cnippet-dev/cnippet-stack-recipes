@@ -1,7 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { Prisma } from "@/app/generated/prisma/client";
-import { getCurrentUser } from "@/lib/actions/get_current_user";
 import prisma from "@/lib/db/prisma";
 import { postIdParamSchema, updatePostSchema } from "@/lib/validation/post";
 
@@ -123,45 +122,35 @@ export async function PATCH(
   }
 }
 
-// export async function DELETE({ params }: { params: { id: string } }) {
-//   try {
-//     const user = await getCurrentUser();
-//     if (!user) {
-//       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-//     }
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  try {
+    const { id } = await params;
 
-//     const { id } = params;
+    const existing = await prisma.post.findUnique({
+      where: { id: Number.parseInt(id, 10) },
+    });
 
-//     const existing = await prisma.post.findUnique({
-//       select: { authorId: true },
-//       where: { id: Number.parseInt(id, 10) },
-//     });
+    if (!existing) {
+      return NextResponse.json({ error: "Post not found" }, { status: 404 });
+    }
 
-//     if (!existing) {
-//       return NextResponse.json({ error: "Post not found" }, { status: 404 });
-//     }
+    await prisma.post.delete({ where: { id: Number.parseInt(id, 10) } });
 
-//     if (existing.authorId !== user.id) {
-//       return NextResponse.json(
-//         { error: "You do not have permission to delete this post" },
-//         { status: 403 },
-//       );
-//     }
+    return new NextResponse(null, { status: 204 });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === "P2025") {
+        return NextResponse.json({ error: "Post not found" }, { status: 404 });
+      }
+    }
 
-//     await prisma.post.delete({ where: { id: Number.parseInt(id, 10) } });
-
-//     return new NextResponse(null, { status: 204 });
-//   } catch (error) {
-//     if (error instanceof Prisma.PrismaClientKnownRequestError) {
-//       if (error.code === "P2025") {
-//         return NextResponse.json({ error: "Post not found" }, { status: 404 });
-//       }
-//     }
-
-//     console.error("[DELETE /api/v1/post/[id]]", error);
-//     return NextResponse.json(
-//       { error: "Internal server error" },
-//       { status: 500 },
-//     );
-//   }
-// }
+    console.error("[DELETE /api/v1/post/[id]]", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
+  }
+}
