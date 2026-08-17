@@ -1,7 +1,3 @@
-export default function Home() {
-  return (
-    <div className="flex h-full w-full items-center justify-center">
-      Drizzle
-    </div>
-  );
+export default async function Home() {
+  return <div>Hello</div>;
 }
