@@ -42,7 +42,7 @@ type TagType = {
 };
 
 type PostType = {
-  id: number;
+  id: string;
   title: string;
   slug: string;
   content: string;
@@ -52,7 +52,7 @@ type PostType = {
 export function Delete() {
   const [posts, setPosts] = useState<PostType[]>([]);
   const [fetching, setFetching] = useState(false);
-  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deletingPost, setDeletingPost] = useState<PostType | null>(null);
 
   const abortRef = useRef<AbortController | null>(null);
@@ -123,7 +123,7 @@ export function Delete() {
         </CardTitle>
 
         <CardPanel className="mb-4 p-0">
-          <Accordion className="w-full rounded-lg last:border-b-1">
+          <Accordion className="w-full rounded-lg last:border-b">
             {posts.map((post) => (
               <AccordionItem
                 className="mt-2 rounded-lg border p-2"
@@ -167,7 +167,7 @@ export function Delete() {
                 </AccordionTrigger>
 
                 <AccordionPanel className="min-w-0">
-                  <div className="break-words">{post.content}</div>
+                  <div className="wrap-break-word">{post.content}</div>
                 </AccordionPanel>
               </AccordionItem>
             ))}

@@ -33,7 +33,7 @@ type TagType = {
 };
 
 type PostType = {
-  id: number;
+  id: string;
   title: string;
   slug: string;
   content: string;
@@ -89,7 +89,7 @@ export function Read() {
         </CardTitle>
 
         <CardPanel className="mb-4 min-w-0 p-0">
-          <Accordion className="w-full min-w-0 rounded-lg last:border-b-1">
+          <Accordion className="w-full min-w-0 rounded-lg last:border-b">
             {posts.map((post) => (
               <AccordionItem
                 className="mt-2 min-w-0 rounded-lg border p-2"
@@ -125,9 +125,7 @@ export function Read() {
                 </AccordionTrigger>
 
                 <AccordionPanel className="min-w-0 max-w-full py-1">
-                  <div className="max-w-full [overflow-wrap:anywhere]">
-                    {post.content}
-                  </div>
+                  <div className="wrap-anywhere max-w-full">{post.content}</div>
                 </AccordionPanel>
               </AccordionItem>
             ))}

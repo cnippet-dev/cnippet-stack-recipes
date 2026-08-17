@@ -38,7 +38,7 @@ type TagType = {
 };
 
 type PostType = {
-  id: number;
+  id: string;
   title: string;
   slug: string;
   content: string;
@@ -48,7 +48,7 @@ type PostType = {
 export function Update() {
   const [posts, setPosts] = useState<PostType[]>([]);
   const [fetching, setFetching] = useState(false);
-  const [updatingId, setUpdatingId] = useState<number | null>(null);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   const [editingPost, setEditingPost] = useState<PostType | null>(null);
   const [draftTitle, setDraftTitle] = useState("");

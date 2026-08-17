@@ -48,8 +48,8 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const idNum = Number(id);
-    if (!Number.isInteger(idNum)) {
+    const parsedId = postIdParamSchema.safeParse({ id });
+    if (!parsedId.success) {
       return NextResponse.json({ error: "Invalid post id" }, { status: 400 });
     }
 
@@ -81,7 +81,7 @@ export async function PATCH(
         }),
       },
       include: { tags: true },
-      where: { id: idNum },
+      where: { id: parsedId.data.id },
     });
 
     return NextResponse.json({ data: post }, { status: 200 });
@@ -119,16 +119,12 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-
-    const existing = await prisma.post.findUnique({
-      where: { id: Number.parseInt(id, 10) },
-    });
-
-    if (!existing) {
-      return NextResponse.json({ error: "Post not found" }, { status: 404 });
+    const parsedId = postIdParamSchema.safeParse({ id });
+    if (!parsedId.success) {
+      return NextResponse.json({ error: "Invalid post id" }, { status: 400 });
     }
 
-    await prisma.post.delete({ where: { id: Number.parseInt(id, 10) } });
+    await prisma.post.delete({ where: { id: parsedId.data.id } });
 
     return new NextResponse(null, { status: 204 });
   } catch (error) {

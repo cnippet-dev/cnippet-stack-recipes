@@ -32,7 +32,8 @@
       "!**/packages/ui/src/lib",
       "!**/packages/ui/src/hooks",
       "!**/apps/authjs/app/generated",
-      "!**/apps/authjs/app/generated/prisma"
+      "!**/apps/authjs/app/generated/prisma",
+      "!**/apps/prisma/app/generated/prisma"
     ]
   },
   "formatter": {
