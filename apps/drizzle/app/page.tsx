@@ -1,5 +1,5 @@
-import { Delete } from "lucide-react";
 import { Create } from "@/components/layout/create";
+import { Delete } from "@/components/layout/delete";
 import { Footer } from "@/components/layout/footer";
 import { Header } from "@/components/layout/header";
 import { Read } from "@/components/layout/read";
