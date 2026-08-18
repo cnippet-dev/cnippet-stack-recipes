@@ -37,7 +37,7 @@ export async function fetchPostsAction() {
 }
 
 export async function updatePostsAction(
-  id: number,
+  id: string,
   data: { title: string; content: string },
 ) {
   const res = await fetch(`${process.env.API_URL}/api/v1/post/${id}`, {
@@ -55,7 +55,7 @@ export async function updatePostsAction(
   return json.data;
 }
 
-export async function deletePostAction(id: number) {
+export async function deletePostAction(id: string) {
   const res = await fetch(`${process.env.API_URL}/api/v1/post/${id}`, {
     method: "DELETE",
   });
