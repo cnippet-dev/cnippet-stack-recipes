@@ -1,21 +1,17 @@
-import { relations } from "drizzle-orm/_relations";
-import { posts, postsToTags, tags } from "./schema";
+import { defineRelations } from "drizzle-orm";
+import * as schema from "./schema";
 
-export const postsRelations = relations(posts, ({ many }) => ({
-  tags: many(postsToTags),
-}));
-
-export const tagsRelations = relations(tags, ({ many }) => ({
-  posts: many(postsToTags),
-}));
-
-export const postsToTagsRelations = relations(postsToTags, ({ one }) => ({
-  post: one(posts, {
-    fields: [postsToTags.postId],
-    references: [posts.id],
-  }),
-  tag: one(tags, {
-    fields: [postsToTags.tagId],
-    references: [tags.id],
-  }),
+export const relations = defineRelations(schema, (r) => ({
+  posts: {
+    tags: r.many.tags({
+      from: r.posts.id.through(r.postsToTags.postId),
+      to: r.tags.id.through(r.postsToTags.tagId),
+    }),
+  },
+  tags: {
+    posts: r.many.posts({
+      from: r.tags.id.through(r.postsToTags.tagId),
+      to: r.posts.id.through(r.postsToTags.postId),
+    }),
+  },
 }));
