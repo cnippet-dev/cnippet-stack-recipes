@@ -52,6 +52,7 @@ export async function PATCH(
   try {
     const { id } = await params;
     const parsedId = postIdParamSchema.safeParse({ id });
+
     if (!parsedId.success) {
       return NextResponse.json({ error: "Invalid post id" }, { status: 400 });
     }

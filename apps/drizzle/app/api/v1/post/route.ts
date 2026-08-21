@@ -25,7 +25,6 @@ export async function POST(req: NextRequest) {
     }
 
     const data = createPostSchema.parse(body);
-    console.log("BOdy", body);
 
     const result = await db.transaction(async (tx) => {
       const [post] = await tx

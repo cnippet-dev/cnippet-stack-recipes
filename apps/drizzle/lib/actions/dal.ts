@@ -60,6 +60,9 @@ export async function deletePostAction(id: string) {
   const res = await fetch(`${process.env.API_URL}/api/v1/post/${id}`, {
     method: "DELETE",
   });
-  if (!res.ok) throw new Error(`Failed to delete post: ${res.status}`);
+
+  if (!res.ok) {
+    throw new Error(`Failed to delete post: ${res.status}`);
+  }
   revalidateTag("posts", "max");
 }
