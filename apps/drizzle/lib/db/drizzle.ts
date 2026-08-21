@@ -1,6 +1,7 @@
+import { neonConfig, Pool } from "@neondatabase/serverless";
 import { config } from "dotenv";
-import { drizzle } from "drizzle-orm/neon-http";
-import { relations } from "./relations";
+import { drizzle } from "drizzle-orm/neon-serverless";
+import { WebSocket } from "ws";
 
 config({ path: ".env" });
 
@@ -8,4 +9,7 @@ const connectionString = process.env.DATABASE_URL;
 
 if (!connectionString) throw new Error("No database url!");
 
-export const db = drizzle(connectionString, { relations });
+neonConfig.webSocketConstructor = WebSocket;
+
+const pool = new Pool({ connectionString });
+export const db = drizzle({ client: pool });

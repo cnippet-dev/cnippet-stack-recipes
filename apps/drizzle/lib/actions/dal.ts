@@ -8,6 +8,7 @@ export async function createPostAction(data: {
   content: string;
   tags: string[];
 }) {
+  console.log(data);
   const res = await fetch(`${process.env.API_URL}/api/v1/post`, {
     body: JSON.stringify(data),
     headers: {

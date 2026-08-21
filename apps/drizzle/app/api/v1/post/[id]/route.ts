@@ -82,16 +82,13 @@ export async function PATCH(
         return null;
       }
 
-      // mirror Prisma's `connectOrCreate` + `set: []` — replace the full
-      // tag set, creating any tag names that don't exist yet. Writes still
-      // go through the join table directly; `.through()` only affects reads
       if (data.tags !== undefined) {
         const tagRows = data.tags.length
           ? await tx
               .insert(tags)
               .values(data.tags.map((name) => ({ name })))
               .onConflictDoUpdate({
-                set: { name: tags.name }, // no-op upsert, just returns existing row
+                set: { name: tags.name },
                 target: tags.name,
               })
               .returning()

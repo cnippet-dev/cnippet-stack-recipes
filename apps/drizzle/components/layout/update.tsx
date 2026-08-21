@@ -70,7 +70,10 @@ export function Update() {
 
       const json = await fetchPostsAction();
       setPosts(Array.isArray(json.data) ? json.data : []);
-      toastManager.add({ title: "Posts loaded.", type: "success" });
+      if (posts.length > 0) {
+        toastManager.add({ title: "Posts loaded.", type: "success" });
+      }
+      toastManager.add({ title: "No posts available.", type: "success" });
     } catch (error) {
       if ((error as Error).name === "AbortError") return;
       console.error(error);

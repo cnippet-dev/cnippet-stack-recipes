@@ -26,10 +26,10 @@ export const posts = pgTable(
       .$onUpdate(() => new Date())
       .notNull(),
   },
-  (table) => ({
-    createdAtIdx: index("posts_created_at_idx").on(table.createdAt),
-    slugUnique: unique("posts_slug_unique").on(table.slug),
-  }),
+  (table) => [
+    index("posts_created_at_idx").on(table.createdAt),
+    unique("posts_slug_unique").on(table.slug),
+  ],
 );
 
 export const tags = pgTable(
