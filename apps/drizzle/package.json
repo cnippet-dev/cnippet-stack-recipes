@@ -38,6 +38,7 @@
   "private": true,
   "scripts": {
     "build": "next build",
+    "db:generate": "drizzle-kit generate",
     "dev": "next dev",
     "start": "next start"
   },

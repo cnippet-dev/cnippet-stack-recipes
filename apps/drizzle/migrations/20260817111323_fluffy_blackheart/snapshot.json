@@ -1,281 +1,260 @@
 {
-  "version": "8",
-  "dialect": "postgres",
-  "id": "1883b88f-4422-46ed-b357-426b193c95de",
-  "prevIds": [
-    "de6a6e14-d369-44c0-a882-7b88feda8b1b"
-  ],
   "ddl": [
     {
+      "entityType": "tables",
       "isRlsEnabled": false,
       "name": "posts",
-      "entityType": "tables",
       "schema": "public"
     },
     {
+      "entityType": "tables",
       "isRlsEnabled": false,
       "name": "posts_to_tags",
-      "entityType": "tables",
       "schema": "public"
     },
     {
+      "entityType": "tables",
       "isRlsEnabled": false,
       "name": "tags",
-      "entityType": "tables",
       "schema": "public"
     },
     {
-      "type": "text",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
       "default": null,
+      "dimensions": 0,
+      "entityType": "columns",
       "generated": null,
       "identity": null,
       "name": "content",
-      "entityType": "columns",
+      "notNull": true,
       "schema": "public",
-      "table": "posts"
+      "table": "posts",
+      "type": "text",
+      "typeSchema": null
     },
     {
-      "type": "timestamp",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
       "default": "now()",
+      "dimensions": 0,
+      "entityType": "columns",
       "generated": null,
       "identity": null,
       "name": "created_at",
-      "entityType": "columns",
+      "notNull": true,
       "schema": "public",
-      "table": "posts"
+      "table": "posts",
+      "type": "timestamp",
+      "typeSchema": null
     },
     {
-      "type": "serial",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
       "default": null,
+      "dimensions": 0,
+      "entityType": "columns",
       "generated": null,
       "identity": null,
       "name": "id",
-      "entityType": "columns",
+      "notNull": true,
       "schema": "public",
-      "table": "posts"
+      "table": "posts",
+      "type": "serial",
+      "typeSchema": null
     },
     {
-      "type": "json",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
       "default": null,
+      "dimensions": 0,
+      "entityType": "columns",
       "generated": null,
       "identity": null,
       "name": "metadata",
-      "entityType": "columns",
+      "notNull": false,
       "schema": "public",
-      "table": "posts"
+      "table": "posts",
+      "type": "json",
+      "typeSchema": null
     },
     {
-      "type": "varchar(200)",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
       "default": null,
+      "dimensions": 0,
+      "entityType": "columns",
       "generated": null,
       "identity": null,
       "name": "slug",
-      "entityType": "columns",
+      "notNull": true,
       "schema": "public",
-      "table": "posts"
+      "table": "posts",
+      "type": "varchar(200)",
+      "typeSchema": null
     },
     {
-      "type": "varchar(200)",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
       "default": null,
+      "dimensions": 0,
+      "entityType": "columns",
       "generated": null,
       "identity": null,
       "name": "title",
-      "entityType": "columns",
+      "notNull": true,
       "schema": "public",
-      "table": "posts"
+      "table": "posts",
+      "type": "varchar(200)",
+      "typeSchema": null
     },
     {
-      "type": "timestamp",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
       "default": "now()",
+      "dimensions": 0,
+      "entityType": "columns",
       "generated": null,
       "identity": null,
       "name": "updated_at",
-      "entityType": "columns",
+      "notNull": true,
       "schema": "public",
-      "table": "posts"
+      "table": "posts",
+      "type": "timestamp",
+      "typeSchema": null
     },
     {
-      "type": "serial",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
       "default": null,
+      "dimensions": 0,
+      "entityType": "columns",
       "generated": null,
       "identity": null,
       "name": "post_id",
-      "entityType": "columns",
+      "notNull": true,
       "schema": "public",
-      "table": "posts_to_tags"
+      "table": "posts_to_tags",
+      "type": "serial",
+      "typeSchema": null
     },
     {
-      "type": "uuid",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
       "default": null,
+      "dimensions": 0,
+      "entityType": "columns",
       "generated": null,
       "identity": null,
       "name": "tag_id",
-      "entityType": "columns",
+      "notNull": true,
       "schema": "public",
-      "table": "posts_to_tags"
+      "table": "posts_to_tags",
+      "type": "uuid",
+      "typeSchema": null
     },
     {
-      "type": "uuid",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
       "default": "gen_random_uuid()",
+      "dimensions": 0,
+      "entityType": "columns",
       "generated": null,
       "identity": null,
       "name": "id",
-      "entityType": "columns",
+      "notNull": true,
       "schema": "public",
-      "table": "tags"
+      "table": "tags",
+      "type": "uuid",
+      "typeSchema": null
     },
     {
-      "type": "varchar(200)",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
       "default": null,
+      "dimensions": 0,
+      "entityType": "columns",
       "generated": null,
       "identity": null,
       "name": "name",
-      "entityType": "columns",
+      "notNull": true,
+      "schema": "public",
+      "table": "tags",
+      "type": "varchar(200)",
+      "typeSchema": null
+    },
+    {
+      "columns": [
+        {
+          "asc": true,
+          "isExpression": false,
+          "nullsFirst": false,
+          "opclass": null,
+          "value": "created_at"
+        }
+      ],
+      "concurrently": false,
+      "entityType": "indexes",
+      "isUnique": false,
+      "method": "btree",
+      "name": "posts_created_at_idx",
+      "nameExplicit": true,
+      "schema": "public",
+      "table": "posts",
+      "where": null,
+      "with": ""
+    },
+    {
+      "columns": ["post_id"],
+      "columnsTo": ["id"],
+      "entityType": "fks",
+      "name": "posts_to_tags_post_id_posts_id_fkey",
+      "nameExplicit": false,
+      "onDelete": "CASCADE",
+      "onUpdate": "NO ACTION",
+      "schema": "public",
+      "schemaTo": "public",
+      "table": "posts_to_tags",
+      "tableTo": "posts"
+    },
+    {
+      "columns": ["tag_id"],
+      "columnsTo": ["id"],
+      "entityType": "fks",
+      "name": "posts_to_tags_tag_id_tags_id_fkey",
+      "nameExplicit": false,
+      "onDelete": "CASCADE",
+      "onUpdate": "NO ACTION",
+      "schema": "public",
+      "schemaTo": "public",
+      "table": "posts_to_tags",
+      "tableTo": "tags"
+    },
+    {
+      "columns": ["id"],
+      "entityType": "pks",
+      "name": "posts_pkey",
+      "nameExplicit": false,
+      "schema": "public",
+      "table": "posts"
+    },
+    {
+      "columns": ["id"],
+      "entityType": "pks",
+      "name": "tags_pkey",
+      "nameExplicit": false,
       "schema": "public",
       "table": "tags"
     },
     {
-      "nameExplicit": true,
-      "columns": [
-        {
-          "value": "created_at",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        }
-      ],
-      "isUnique": false,
-      "where": null,
-      "with": "",
-      "method": "btree",
-      "concurrently": false,
-      "name": "posts_created_at_idx",
-      "entityType": "indexes",
-      "schema": "public",
-      "table": "posts"
-    },
-    {
-      "nameExplicit": false,
-      "columns": [
-        "post_id"
-      ],
-      "schemaTo": "public",
-      "tableTo": "posts",
-      "columnsTo": [
-        "id"
-      ],
-      "onUpdate": "NO ACTION",
-      "onDelete": "CASCADE",
-      "name": "posts_to_tags_post_id_posts_id_fkey",
-      "entityType": "fks",
-      "schema": "public",
-      "table": "posts_to_tags"
-    },
-    {
-      "nameExplicit": false,
-      "columns": [
-        "tag_id"
-      ],
-      "schemaTo": "public",
-      "tableTo": "tags",
-      "columnsTo": [
-        "id"
-      ],
-      "onUpdate": "NO ACTION",
-      "onDelete": "CASCADE",
-      "name": "posts_to_tags_tag_id_tags_id_fkey",
-      "entityType": "fks",
-      "schema": "public",
-      "table": "posts_to_tags"
-    },
-    {
-      "columns": [
-        "id"
-      ],
-      "nameExplicit": false,
-      "name": "posts_pkey",
-      "schema": "public",
-      "table": "posts",
-      "entityType": "pks"
-    },
-    {
-      "columns": [
-        "id"
-      ],
-      "nameExplicit": false,
-      "name": "tags_pkey",
-      "schema": "public",
-      "table": "tags",
-      "entityType": "pks"
-    },
-    {
-      "nameExplicit": true,
-      "columns": [
-        "slug"
-      ],
-      "nullsNotDistinct": false,
+      "columns": ["slug"],
+      "entityType": "uniques",
       "name": "posts_slug_unique",
-      "entityType": "uniques",
+      "nameExplicit": true,
+      "nullsNotDistinct": false,
       "schema": "public",
       "table": "posts"
     },
     {
-      "nameExplicit": true,
-      "columns": [
-        "post_id",
-        "tag_id"
-      ],
-      "nullsNotDistinct": false,
-      "name": "posts_to_tags_unique",
+      "columns": ["post_id", "tag_id"],
       "entityType": "uniques",
+      "name": "posts_to_tags_unique",
+      "nameExplicit": true,
+      "nullsNotDistinct": false,
       "schema": "public",
       "table": "posts_to_tags"
     },
     {
-      "nameExplicit": true,
-      "columns": [
-        "name"
-      ],
-      "nullsNotDistinct": false,
-      "name": "tags_name_unique",
+      "columns": ["name"],
       "entityType": "uniques",
+      "name": "tags_name_unique",
+      "nameExplicit": true,
+      "nullsNotDistinct": false,
       "schema": "public",
       "table": "tags"
     }
   ],
-  "renames": []
+  "dialect": "postgres",
+  "id": "1883b88f-4422-46ed-b357-426b193c95de",
+  "prevIds": ["de6a6e14-d369-44c0-a882-7b88feda8b1b"],
+  "renames": [],
+  "version": "8"
 }
