@@ -14,6 +14,5 @@ export default defineConfig({
   dialect: "postgresql",
   out: "./migrations",
   schema: "./lib/db/schema.ts",
-  strict: true,
   verbose: true,
 });
