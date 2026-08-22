@@ -1,0 +1,62 @@
+{
+  "ddl": [
+    {
+      "entityType": "tables",
+      "isRlsEnabled": false,
+      "name": "todo",
+      "schema": "public"
+    },
+    {
+      "default": "false",
+      "dimensions": 0,
+      "entityType": "columns",
+      "generated": null,
+      "identity": null,
+      "name": "done",
+      "notNull": true,
+      "schema": "public",
+      "table": "todo",
+      "type": "boolean",
+      "typeSchema": null
+    },
+    {
+      "default": null,
+      "dimensions": 0,
+      "entityType": "columns",
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "notNull": true,
+      "schema": "public",
+      "table": "todo",
+      "type": "integer",
+      "typeSchema": null
+    },
+    {
+      "default": null,
+      "dimensions": 0,
+      "entityType": "columns",
+      "generated": null,
+      "identity": null,
+      "name": "text",
+      "notNull": true,
+      "schema": "public",
+      "table": "todo",
+      "type": "text",
+      "typeSchema": null
+    },
+    {
+      "columns": ["id"],
+      "entityType": "pks",
+      "name": "todo_pkey",
+      "nameExplicit": false,
+      "schema": "public",
+      "table": "todo"
+    }
+  ],
+  "dialect": "postgres",
+  "id": "de6a6e14-d369-44c0-a882-7b88feda8b1b",
+  "prevIds": ["00000000-0000-0000-0000-000000000000"],
+  "renames": [],
+  "version": "8"
+}

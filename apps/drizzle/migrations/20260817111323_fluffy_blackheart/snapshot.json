@@ -1,0 +1,260 @@
+{
+  "ddl": [
+    {
+      "entityType": "tables",
+      "isRlsEnabled": false,
+      "name": "posts",
+      "schema": "public"
+    },
+    {
+      "entityType": "tables",
+      "isRlsEnabled": false,
+      "name": "posts_to_tags",
+      "schema": "public"
+    },
+    {
+      "entityType": "tables",
+      "isRlsEnabled": false,
+      "name": "tags",
+      "schema": "public"
+    },
+    {
+      "default": null,
+      "dimensions": 0,
+      "entityType": "columns",
+      "generated": null,
+      "identity": null,
+      "name": "content",
+      "notNull": true,
+      "schema": "public",
+      "table": "posts",
+      "type": "text",
+      "typeSchema": null
+    },
+    {
+      "default": "now()",
+      "dimensions": 0,
+      "entityType": "columns",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "notNull": true,
+      "schema": "public",
+      "table": "posts",
+      "type": "timestamp",
+      "typeSchema": null
+    },
+    {
+      "default": null,
+      "dimensions": 0,
+      "entityType": "columns",
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "notNull": true,
+      "schema": "public",
+      "table": "posts",
+      "type": "serial",
+      "typeSchema": null
+    },
+    {
+      "default": null,
+      "dimensions": 0,
+      "entityType": "columns",
+      "generated": null,
+      "identity": null,
+      "name": "metadata",
+      "notNull": false,
+      "schema": "public",
+      "table": "posts",
+      "type": "json",
+      "typeSchema": null
+    },
+    {
+      "default": null,
+      "dimensions": 0,
+      "entityType": "columns",
+      "generated": null,
+      "identity": null,
+      "name": "slug",
+      "notNull": true,
+      "schema": "public",
+      "table": "posts",
+      "type": "varchar(200)",
+      "typeSchema": null
+    },
+    {
+      "default": null,
+      "dimensions": 0,
+      "entityType": "columns",
+      "generated": null,
+      "identity": null,
+      "name": "title",
+      "notNull": true,
+      "schema": "public",
+      "table": "posts",
+      "type": "varchar(200)",
+      "typeSchema": null
+    },
+    {
+      "default": "now()",
+      "dimensions": 0,
+      "entityType": "columns",
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "notNull": true,
+      "schema": "public",
+      "table": "posts",
+      "type": "timestamp",
+      "typeSchema": null
+    },
+    {
+      "default": null,
+      "dimensions": 0,
+      "entityType": "columns",
+      "generated": null,
+      "identity": null,
+      "name": "post_id",
+      "notNull": true,
+      "schema": "public",
+      "table": "posts_to_tags",
+      "type": "serial",
+      "typeSchema": null
+    },
+    {
+      "default": null,
+      "dimensions": 0,
+      "entityType": "columns",
+      "generated": null,
+      "identity": null,
+      "name": "tag_id",
+      "notNull": true,
+      "schema": "public",
+      "table": "posts_to_tags",
+      "type": "uuid",
+      "typeSchema": null
+    },
+    {
+      "default": "gen_random_uuid()",
+      "dimensions": 0,
+      "entityType": "columns",
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "notNull": true,
+      "schema": "public",
+      "table": "tags",
+      "type": "uuid",
+      "typeSchema": null
+    },
+    {
+      "default": null,
+      "dimensions": 0,
+      "entityType": "columns",
+      "generated": null,
+      "identity": null,
+      "name": "name",
+      "notNull": true,
+      "schema": "public",
+      "table": "tags",
+      "type": "varchar(200)",
+      "typeSchema": null
+    },
+    {
+      "columns": [
+        {
+          "asc": true,
+          "isExpression": false,
+          "nullsFirst": false,
+          "opclass": null,
+          "value": "created_at"
+        }
+      ],
+      "concurrently": false,
+      "entityType": "indexes",
+      "isUnique": false,
+      "method": "btree",
+      "name": "posts_created_at_idx",
+      "nameExplicit": true,
+      "schema": "public",
+      "table": "posts",
+      "where": null,
+      "with": ""
+    },
+    {
+      "columns": ["post_id"],
+      "columnsTo": ["id"],
+      "entityType": "fks",
+      "name": "posts_to_tags_post_id_posts_id_fkey",
+      "nameExplicit": false,
+      "onDelete": "CASCADE",
+      "onUpdate": "NO ACTION",
+      "schema": "public",
+      "schemaTo": "public",
+      "table": "posts_to_tags",
+      "tableTo": "posts"
+    },
+    {
+      "columns": ["tag_id"],
+      "columnsTo": ["id"],
+      "entityType": "fks",
+      "name": "posts_to_tags_tag_id_tags_id_fkey",
+      "nameExplicit": false,
+      "onDelete": "CASCADE",
+      "onUpdate": "NO ACTION",
+      "schema": "public",
+      "schemaTo": "public",
+      "table": "posts_to_tags",
+      "tableTo": "tags"
+    },
+    {
+      "columns": ["id"],
+      "entityType": "pks",
+      "name": "posts_pkey",
+      "nameExplicit": false,
+      "schema": "public",
+      "table": "posts"
+    },
+    {
+      "columns": ["id"],
+      "entityType": "pks",
+      "name": "tags_pkey",
+      "nameExplicit": false,
+      "schema": "public",
+      "table": "tags"
+    },
+    {
+      "columns": ["slug"],
+      "entityType": "uniques",
+      "name": "posts_slug_unique",
+      "nameExplicit": true,
+      "nullsNotDistinct": false,
+      "schema": "public",
+      "table": "posts"
+    },
+    {
+      "columns": ["post_id", "tag_id"],
+      "entityType": "uniques",
+      "name": "posts_to_tags_unique",
+      "nameExplicit": true,
+      "nullsNotDistinct": false,
+      "schema": "public",
+      "table": "posts_to_tags"
+    },
+    {
+      "columns": ["name"],
+      "entityType": "uniques",
+      "name": "tags_name_unique",
+      "nameExplicit": true,
+      "nullsNotDistinct": false,
+      "schema": "public",
+      "table": "tags"
+    }
+  ],
+  "dialect": "postgres",
+  "id": "1883b88f-4422-46ed-b357-426b193c95de",
+  "prevIds": ["de6a6e14-d369-44c0-a882-7b88feda8b1b"],
+  "renames": [],
+  "version": "8"
+}
