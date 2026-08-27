@@ -1,0 +1,58 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id    String @id @default(cuid())
+  name  String
+  email String @unique
+  posts Post[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model Post {
+  id       String    @id @default(cuid())
+  title    String
+  content  String
+  status   Status    @default(DRAFT)
+  comments Comment[]
+
+  author   User?   @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  authorId String? @map("author_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([status, createdAt])
+  @@index([authorId])
+  @@map("posts")
+}
+
+model Comment {
+  id   String @id @default(cuid())
+  body String
+
+  post   Post?   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([postId, createdAt])
+  @@map("comments")
+}
+
+enum Status {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
