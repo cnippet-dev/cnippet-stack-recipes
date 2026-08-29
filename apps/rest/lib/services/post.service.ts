@@ -64,19 +64,6 @@ export const postService = {
 
   async getPost(id: string) {
     const post = await prisma.post.findUnique({
-      include: {
-        _count: {
-          select: {
-            comments: true,
-          },
-        },
-        author: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-      },
       where: { id },
     });
 
