@@ -1,6 +1,9 @@
 import { Create } from "@/components/layout/create";
+import { Delete } from "@/components/layout/delete";
 import { Footer } from "@/components/layout/footer";
 import { Header } from "@/components/layout/header";
+import { Read } from "@/components/layout/read";
+import { Update } from "@/components/layout/update";
 
 export default function Home() {
   return (
@@ -14,9 +17,9 @@ export default function Home() {
           </h1>
           <div className="flex items-center justify-between">
             <Create />
-            {/* <Read />
+            <Read />
             <Update />
-            <Delete /> */}
+            <Delete />
           </div>
         </div>
       </div>
