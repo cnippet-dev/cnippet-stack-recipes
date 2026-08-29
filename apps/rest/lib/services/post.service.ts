@@ -8,8 +8,26 @@ import type {
 } from "../validations/post.schema";
 
 export const postService = {
-  async createPost(input: CreatePostInput) {
-    return prisma.post.create({ data: input });
+  async createPost(data: CreatePostInput) {
+    return prisma.post.create({
+      data: {
+        content: data.content,
+        metadata: data.metadata as Prisma.InputJsonValue | undefined,
+        slug: data.slug,
+        tags: data.tags?.length
+          ? {
+              connectOrCreate: data.tags.map((name) => ({
+                create: { name },
+                where: { name },
+              })),
+            }
+          : undefined,
+        title: data.title,
+      },
+      include: {
+        tags: true,
+      },
+    });
   },
   async deletePost(id: string) {
     return prisma.post.delete({ where: { id } });
@@ -68,11 +86,12 @@ export const postService = {
 
     return { post };
   },
+
   async listPosts(query: ListPostQuery) {
-    const { cursor, limit, status, search, sort, order } = query;
+    const { cursor, limit, page, search, sortBy, sortOrder, tag } = query;
 
     const where: Prisma.PostWhereInput = {
-      ...(status && { status }),
+      ...(query.tag && { tags: { some: { name: tag } } }),
       ...(search && {
         OR: [
           { title: { contains: search, mode: "insensitive" } },
@@ -85,15 +104,8 @@ export const postService = {
       prisma.post.count({ where }),
       prisma.post.findMany({
         ...(cursor && { cursor: { id: cursor }, skip: 1 }),
-        include: {
-          author: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-        },
-        orderBy: { [sort]: order },
+        orderBy: { [sortBy]: sortOrder },
+        skip: (page - 1) * limit,
         take: limit + 1,
         where,
       }),

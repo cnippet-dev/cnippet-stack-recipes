@@ -6,18 +6,32 @@ export const listPostsQuerySchema = z.object({
 
   // For cursor pagination
   cursor: z.string().cuid().optional(),
-  limit: z.coerce.number().int().min(1).max(20).default(10),
-  order: z.enum(["asc", "desc"]).default("desc"),
-  search: z.string().trim().max(200).optional(),
-  sort: z.enum(["createdAt", "updatedAt", "title"]).default("createdAt"),
-  status: z.enum(["DRAFT", "ARCHIVED", "PUBLISHED"]).default("PUBLISHED"),
+  limit: z.coerce.number().int().positive().max(100).default(10),
+  page: z.coerce.number().int().positive().default(1),
+  search: z.string().trim().min(1).max(200).optional(),
+  sortBy: z.enum(["createdAt", "updatedAt", "title"]).default("createdAt"),
+  sortOrder: z.enum(["asc", "desc"]).default("desc"),
+  tag: z.string().trim().min(1).optional(),
 });
 
 export const createPostSchema = z.object({
-  authorId: z.string().uuid(),
-  content: z.string().min(1),
-  status: z.enum(["DRAFT", "PUBLISHED"]).default("DRAFT"),
-  title: z.string().min(3).max(200),
+  content: z.string().trim().min(1, "Content is required"),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+  slug: z
+    .string()
+    .trim()
+    .min(1, "Slug is required")
+    .max(200)
+    .regex(
+      /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+      "Slug must be lowercase, alphanumeric, and hyphen-separated",
+    ),
+  tags: z.array(z.string().trim().min(1).max(20)).optional().default([]),
+  title: z
+    .string()
+    .trim()
+    .min(1, "Title is required")
+    .max(200, "Title must be 200 characters or fewer"),
 });
 
 export const updatePostSchema = createPostSchema
