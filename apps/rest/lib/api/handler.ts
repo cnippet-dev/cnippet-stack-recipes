@@ -1,5 +1,6 @@
 import { Prisma } from "@/app/generated/prisma/client";
 import { ApiError } from "./errors";
+import { enforceRateLimit } from "./rate-limit";
 import { fail } from "./responses";
 
 type Handler<Ctx> = (request: Request, context: Ctx) => Promise<Response>;

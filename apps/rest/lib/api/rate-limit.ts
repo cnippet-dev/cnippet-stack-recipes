@@ -1,5 +1,10 @@
+import { Ratelimit } from "@upstash/ratelimit";
+import { Redis } from "@upstash/redis";
+import { envConfig } from "../utils/env";
+import { ApiError } from "./errors";
+
 const redis = new Redis({
-  token: envCongig.rateLimit.token,
+  token: envConfig.rateLimit.token,
   url: envConfig.rateLimit.url,
 });
 
@@ -38,7 +43,7 @@ export async function enforceRateLimit(
   const id = resolveClientId(request);
   const limiter = getLimiter(dynamicLimit.limit);
 
-  let result;
+  let result: RatelimitResponse;
   try {
     result = await limiter.limit(id);
   } catch (err) {
