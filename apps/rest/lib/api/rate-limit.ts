@@ -41,9 +41,10 @@ export async function enforceRateLimit(
   dynamicLimit: { limit: number },
 ) {
   const id = resolveClientId(request);
-  const limiter = getLimiter(dynamicLimit.limit);
+  const limiter: Ratelimit = getLimiter(dynamicLimit.limit);
 
-  let result: RatelimitResponse;
+  let result: Awaited<ReturnType<typeof limiter.limit>>;
+
   try {
     result = await limiter.limit(id);
   } catch (err) {
