@@ -138,6 +138,7 @@ export function Delete() {
                         className="cursor-pointer"
                         variant="destructive"
                       >
+                        {/** biome-ignore lint/a11y/useSemanticElements: span is used as an interactive element */}
                         <span
                           onClick={(e) => {
                             e.stopPropagation();
@@ -145,6 +146,12 @@ export function Delete() {
                           }}
                           role="button"
                           tabIndex={0}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter" || event.key === " ") {
+                              event.preventDefault();
+                              openDeleteDialog(post);
+                            }
+                          }}
                         >
                           <Trash2Icon className="size-3" />
                         </span>

@@ -104,17 +104,17 @@ export function Read() {
                         className="cursor-pointer"
                         variant="success"
                       >
-                        <span role="button" tabIndex={0}>
+                        <button type="button" tabIndex={0}>
                           <BookTextIcon className="size-3" />
-                        </span>
+                        </button>
                       </Badge>
                       {post.title}
                     </span>
 
-                    {post.tags?.map((tag, id) => (
+                    {post.tags?.map((tag) => (
                       <Badge
                         className="shrink-0 text-muted-foreground"
-                        key={id}
+                        key={tag.id}
                         style={{ fontSize: 11 }}
                         variant="outline"
                       >
