@@ -20,6 +20,8 @@ env:
   NEXT_PUBLIC_APP_URL: http://localhost:3000
   NEXT_PUBLIC_BETTER_AUTH_URL: http://localhost:3000
   API_URL: http://localhost:3000
+  UPSTASH_REDIS_REST_URL: https://your.upstash.io
+  UPSTASH_REDIS_REST_TOKEN: your-token-asdfas0jpiuhewqnaskjdbxzmcoaidhf
 
 jobs:
   build:
