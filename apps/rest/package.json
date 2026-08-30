@@ -19,7 +19,6 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.3",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/pg": "^8.23.1",
@@ -39,9 +38,8 @@
   "private": true,
   "scripts": {
     "build": "next build",
+    "db:generate": "prisma generate",
     "dev": "next dev",
-    "format": "biome format --write",
-    "lint": "biome check",
     "start": "next start"
   },
   "trustedDependencies": [
