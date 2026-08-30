@@ -140,7 +140,6 @@ export function Update() {
                         className="cursor-pointer"
                         variant="info"
                       >
-                        {/** biome-ignore lint/a11y/useSemanticElements: span is used as an interactive element */}
                         <span
                           onClick={(e) => {
                             e.stopPropagation();

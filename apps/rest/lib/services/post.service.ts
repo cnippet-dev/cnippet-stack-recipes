@@ -101,8 +101,10 @@ export const postService = {
     let nextCursor: string | null = null;
 
     if (posts.length > limit) {
-      const nextItem = posts.pop()!;
-      nextCursor = nextItem.id;
+      const nextItem = posts.pop();
+      if (nextItem) {
+        nextCursor = nextItem.id;
+      }
     }
 
     return {

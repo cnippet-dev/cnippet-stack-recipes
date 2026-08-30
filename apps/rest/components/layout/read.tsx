@@ -104,7 +104,6 @@ export function Read() {
                         className="cursor-pointer"
                         variant="success"
                       >
-                        {/** biome-ignore lint/a11y/useSemanticElements: div used as a reactive element */}
                         <div role="button" tabIndex={0}>
                           <BookTextIcon className="size-3" />
                         </div>
