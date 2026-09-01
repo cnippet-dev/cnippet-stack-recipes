@@ -18,10 +18,9 @@ export const createClient = (
       },
       setAll(cookiesToSet) {
         try {
-          // biome-ignore lint/suspicious/useIterableCallbackReturn: server client
-          cookiesToSet.forEach(({ name, value, options }) =>
-            cookieStore.set(name, value, options),
-          );
+          cookiesToSet.forEach(({ name, value, options }) => {
+            cookieStore.set(name, value, options);
+          });
         } catch {}
       },
     },
