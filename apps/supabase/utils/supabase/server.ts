@@ -1,5 +1,7 @@
+"use server";
+
 import { createServerClient } from "@supabase/ssr";
-import type { cookies } from "next/headers";
+import { cookies } from "next/headers";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -8,10 +10,13 @@ if (!supabaseUrl || !supabaseKey) {
   throw new Error("No SUPABASE_URL or SUPABASE_KEY");
 }
 
-export const createClient = (
-  cookieStore: Awaited<ReturnType<typeof cookies>>,
-) => {
-  return createServerClient(supabaseUrl, supabaseKey, {
+const SUPABASE_URL: string = supabaseUrl;
+const SUPABASE_KEY: string = supabaseKey;
+
+export async function createClient() {
+  const cookieStore = await cookies();
+
+  return createServerClient(SUPABASE_URL, SUPABASE_KEY, {
     cookies: {
       getAll() {
         return cookieStore.getAll();
@@ -25,4 +30,4 @@ export const createClient = (
       },
     },
   });
-};
+}
