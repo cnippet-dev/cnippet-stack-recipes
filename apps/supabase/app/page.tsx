@@ -1,26 +1,20 @@
-"use client";
-
-import { useState } from "react";
-import { fetchPostsActions } from "@/lib/actions/dal";
+import { Create } from "@/components/layout/create";
 
 export default function Home() {
-  const [posts, setPosts] = useState<{ id: string; title: string }[] | null>(
-    [],
-  );
-
-  const fetchPosts = async () => {
-    const res = await fetchPostsActions();
-    setPosts(res);
-  };
-
   return (
-    <div>
-      <div>
-        {posts?.map((post) => (
-          <p key={post.id}>{post.title}</p>
-        ))}
+    <div className="flex h-screen w-screen items-center justify-center bg-foreground text-background">
+      <div className="w-7xl max-w-7xl">
+        <h1 className="mb-5 flex items-end text-4xl tracking-tighter">
+          <p className="text-6xl">C</p>
+          <p className="text-2xl">nippet</p>
+        </h1>
+        <div className="flex items-center justify-between">
+          <Create />
+          {/* <Read />
+          <Update />
+          <Delete /> */}
+        </div>
       </div>
-      <button onClick={fetchPosts}>Fetch</button>
     </div>
   );
 }
