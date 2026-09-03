@@ -2,50 +2,33 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
-import {
-  type CreatePostInput,
-  createPostSchema,
-} from "../validations/post.schema";
 
-export async function fetchPostsAction(input: CreatePostInput) {
-  const parsed = createPostSchema.safeParse(input);
-
-  if (!parsed.success) {
-    return {
-      error: "Invalid input",
-      fieldErrors: parsed.error.flatten().fieldErrors,
-      success: false,
-    };
-  }
-
+export async function fetchPostsAction() {
   const supabase = await createClient();
 
   const { data, error } = await supabase
-    .rpc("create_post_with_tags", {
-      p_content: parsed.data.content,
-      p_metadata: parsed.data.metadata ?? null,
-      p_slug: parsed.data.slug,
-      p_tags: parsed.data.tags,
-      p_title: parsed.data.title,
-    })
-    .single();
+    .from("posts")
+    .select(`
+    id,
+    title,
+    slug,
+    content,
+    metadata,
+    created_at,
+    updated_at,
+    post_tags (
+      tags ( id, name )
+    )
+  `)
+    .order("created_at", { ascending: false });
 
   if (error) {
-    if (error.code === "23505") {
-      return {
-        error: "A post with this slug already exists.",
-        fieldErrors: { slug: ["Slug already in use"] },
-        success: false,
-      };
-    }
-
-    console.error("[createPostAction]", error);
+    console.error("[fetchPostsAction]", error);
     return {
-      error: "Failed to create post. Please try again.",
+      error: "Failed to fetch posts. Please try again.",
       success: false,
     };
   }
-
   revalidatePath("/posts");
   return { data, success: true };
 }

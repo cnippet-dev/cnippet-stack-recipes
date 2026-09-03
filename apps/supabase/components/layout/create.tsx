@@ -3,7 +3,7 @@
 import { CircleAlertIcon, PlusIcon, XIcon } from "lucide-react";
 import type { KeyboardEvent } from "react";
 import { useState } from "react";
-import { fetchPostsAction } from "@/lib/actions/fetchPostsActions";
+import { createPostAction } from "@/lib/actions/createPostsActions";
 import { Button } from "../ui/button";
 import {
   Card,
@@ -65,12 +65,14 @@ export function Create() {
     try {
       setLoading(true);
 
-      await fetchPostsAction({
+      const result = await createPostAction({
         content: payload.content,
         slug: payload.slug,
         tags: payload.tags,
         title: payload.title,
       });
+
+      console.log(result);
 
       toastManager.add({
         title: "Post created successfully.",
