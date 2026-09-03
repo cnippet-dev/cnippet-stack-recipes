@@ -58,9 +58,7 @@ export function Read() {
       const json = await fetchPostsAction();
 
       setPosts(Array.isArray(json.data) ? json.data : []);
-      console.log(posts);
 
-      console.log(json.data);
       toastManager.add({ title: "Posts loaded.", type: "success" });
     } catch (error) {
       if ((error as Error).name === "AbortError") return;

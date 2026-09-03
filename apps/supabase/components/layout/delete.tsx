@@ -1,9 +1,14 @@
 "use client";
 
-import { CircleAlertIcon, DownloadIcon, PenBox, PenIcon } from "lucide-react";
+import {
+  CircleAlertIcon,
+  DownloadIcon,
+  InfoIcon,
+  Trash2Icon,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { deletePostAction } from "@/lib/actions/deletePostActions";
 import { fetchPostsAction } from "@/lib/actions/fetchPostsActions";
-import { updatePostActions } from "@/lib/actions/updatePostActions";
 import {
   Accordion,
   AccordionItem,
@@ -27,31 +32,29 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../ui/dialog";
-import { Input } from "../ui/input";
-import { Label } from "../ui/label";
 import { Spinner } from "../ui/spinner";
-import { Textarea } from "../ui/textarea";
 import { toastManager } from "../ui/toast";
+
+// TODO Fix accordion shift
+
+type TagType = {
+  id: string;
+  name: string;
+};
 
 type PostType = {
   id: string;
   title: string;
   slug: string;
   content: string;
-  created_at: string;
-  updated_at: string;
-  metadata: unknown;
-  post_tags: { tags: { id: string; name: string } }[];
+  tags: TagType[];
 };
 
-export function Update() {
+export function Delete() {
   const [posts, setPosts] = useState<PostType[]>([]);
   const [fetching, setFetching] = useState(false);
-  const [updatingId, setUpdatingId] = useState<string | null>(null);
-
-  const [editingPost, setEditingPost] = useState<PostType | null>(null);
-  const [draftTitle, setDraftTitle] = useState("");
-  const [draftContent, setDraftContent] = useState("");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deletingPost, setDeletingPost] = useState<PostType | null>(null);
 
   const abortRef = useRef<AbortController | null>(null);
 
@@ -79,39 +82,34 @@ export function Update() {
     }
   };
 
-  const openEditDialog = (post: PostType) => {
-    setEditingPost(post);
-    setDraftTitle(post.title);
-    setDraftContent(post.content);
+  const openDeleteDialog = (post: PostType) => {
+    setDeletingPost(post);
   };
 
-  const handleUpdate = async () => {
-    if (!editingPost) return;
-    const id = editingPost.id;
+  const handleDelete = async () => {
+    if (!deletingPost) return;
+    const id = deletingPost.id;
+    const prevPosts = posts;
+
+    setPosts(posts.filter((post) => post.id !== id));
 
     try {
-      setUpdatingId(id);
+      setDeletingId(id);
 
-      const { data, error } = await updatePostActions(id, {
-        content: draftContent,
-        title: draftTitle,
-      });
+      const { success, error } = await deletePostAction({ id });
 
-      if (!data) {
-        error;
-        return;
+      if (!success) {
+        console.log("Error", error);
       }
 
-      setPosts((currentPosts) =>
-        currentPosts.map((post) => (post.id === id ? data[0] : post)),
-      );
-      toastManager.add({ title: "Post updated", type: "success" });
-      setEditingPost(null);
+      toastManager.add({ title: "Post deleted", type: "success" });
+      setDeletingPost(null);
     } catch (error) {
       console.error(error);
-      toastManager.add({ title: "Failed to update post.", type: "error" });
+      setPosts(prevPosts);
+      toastManager.add({ title: "Failed to delete post.", type: "error" });
     } finally {
-      setUpdatingId(null);
+      setDeletingId(null);
     }
   };
 
@@ -119,17 +117,18 @@ export function Update() {
     <Card className="h-fit w-[320px] min-w-0 max-w-full">
       <CardHeader style={{ padding: "16px", paddingBottom: 0 }}>
         <CardTitle className="flex items-end gap-0 tracking-tighter">
-          <p className="font-semibold text-4xl">U</p>
-          <p className="text-lg">pdate</p>
+          <p className="font-semibold text-4xl">D</p>
+          <p className="text-lg">elete</p>
         </CardTitle>
       </CardHeader>
       <CardContent style={{ padding: "16px", paddingTop: 0 }}>
         <CardTitle className="flex items-center gap-1 text-muted-foreground text-sm">
-          <PenBox className="size-3 text-blue-500" strokeWidth={2} />
-          <p className="font-medium tracking-tight">Update posts.</p>
+          <Trash2Icon className="size-3 text-red-500" strokeWidth={2} />
+          <p className="font-medium tracking-tight">Delete posts.</p>
         </CardTitle>
+
         <CardPanel className="mb-4 p-0">
-          <Accordion className="w-full rounded-lg last:border-b-1">
+          <Accordion className="w-full rounded-lg last:border-b">
             {posts.map((post) => (
               <AccordionItem
                 className="mt-2 rounded-lg border p-2"
@@ -142,45 +141,44 @@ export function Update() {
                       <Badge
                         // asChild
                         className="cursor-pointer"
-                        variant="info"
+                        variant="destructive"
                       >
                         <span
                           onClick={(e) => {
                             e.stopPropagation();
-                            openEditDialog(post);
+                            openDeleteDialog(post);
                           }}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" || e.key === " ") {
-                              e.stopPropagation();
-                              e.preventDefault();
-                              openEditDialog(post);
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter" || event.key === " ") {
+                              event.preventDefault();
+                              openDeleteDialog(post);
                             }
                           }}
                           role="button"
                           tabIndex={0}
                         >
-                          <PenIcon className="size-3" />
+                          <Trash2Icon className="size-3" />
                         </span>
                       </Badge>
 
                       {post.title}
                     </span>
 
-                    {post.post_tags?.map((tag) => (
+                    {post.tags?.map((tag) => (
                       <Badge
                         className="shrink-0 text-muted-foreground"
-                        key={tag.tags.id}
+                        key={tag.id}
                         style={{ fontSize: 11 }}
                         variant="outline"
                       >
-                        {tag.tags.name}
+                        {tag.name}
                       </Badge>
                     ))}
                   </div>
                 </AccordionTrigger>
 
                 <AccordionPanel className="min-w-0">
-                  <div className="break-words">{post.content}</div>
+                  <div className="wrap-break-word">{post.content}</div>
                 </AccordionPanel>
               </AccordionItem>
             ))}
@@ -199,7 +197,7 @@ export function Update() {
               </>
             )}
           </Button>
-          <div className="flex gap-1 truncate text-muted-foreground text-xs">
+          <div className="flex gap-1 text-muted-foreground text-xs">
             <CircleAlertIcon className="size-3 h-lh shrink-0" />
             <p>This might take a few seconds to complete.</p>
           </div>
@@ -207,44 +205,37 @@ export function Update() {
       </CardContent>
 
       <Dialog
-        onOpenChange={(open) => !open && setEditingPost(null)}
-        open={editingPost !== null}
+        onOpenChange={(open) => !open && setDeletingPost(null)}
+        open={deletingPost !== null}
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit post</DialogTitle>
+            <DialogTitle>Delete post</DialogTitle>
           </DialogHeader>
 
-          <div className="flex flex-col gap-4 px-6 pb-4">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="title">Title</Label>
-              <Input
-                id="title"
-                onChange={(e) => setDraftTitle(e.target.value)}
-                value={draftTitle}
-              />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="content">Content</Label>
-              <Textarea
-                id="content"
-                onChange={(e) => setDraftContent(e.target.value)}
-                rows={6}
-                value={draftContent}
-              />
-            </div>
+          <div className="flex items-center px-6 pb-6">
+            <Badge variant="info">
+              <InfoIcon className="size-4" />
+            </Badge>
+            <p className="ml-1 text-muted-foreground">
+              Are you sure you want to delete this post?
+            </p>
           </div>
 
           <DialogFooter>
             <Button
-              disabled={updatingId !== null}
-              onClick={() => setEditingPost(null)}
+              disabled={deletingId !== null}
+              onClick={() => setDeletingPost(null)}
               variant="outline"
             >
               Cancel
             </Button>
-            <Button disabled={updatingId !== null} onClick={handleUpdate}>
-              {updatingId !== null ? <Spinner /> : "Save"}
+            <Button
+              disabled={deletingId !== null}
+              onClick={handleDelete}
+              variant="destructive"
+            >
+              {deletingId !== null ? <Spinner /> : "Delete"}
             </Button>
           </DialogFooter>
         </DialogContent>

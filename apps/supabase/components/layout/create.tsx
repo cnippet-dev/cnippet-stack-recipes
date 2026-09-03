@@ -65,14 +65,12 @@ export function Create() {
     try {
       setLoading(true);
 
-      const result = await createPostAction({
+      await createPostAction({
         content: payload.content,
         slug: payload.slug,
         tags: payload.tags,
         title: payload.title,
       });
-
-      console.log(result);
 
       toastManager.add({
         title: "Post created successfully.",

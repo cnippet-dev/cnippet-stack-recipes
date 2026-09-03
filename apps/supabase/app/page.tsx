@@ -1,4 +1,5 @@
 import { Create } from "@/components/layout/create";
+import { Delete } from "@/components/layout/delete";
 import { Read } from "@/components/layout/read";
 import { Update } from "@/components/layout/update";
 
@@ -14,7 +15,7 @@ export default function Home() {
           <Create />
           <Read />
           <Update />
-          {/* <Delete /> */}
+          <Delete />
         </div>
       </div>
     </div>
