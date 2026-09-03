@@ -20,4 +20,14 @@ export const createPostSchema = z.object({
     .max(200, "Title must be 200 characters or fewer"),
 });
 
+export const updatePostSchema = z.object({
+  content: z.string().trim().min(1, "Content is required"),
+  title: z
+    .string()
+    .trim()
+    .min(1, "Title is required")
+    .max(200, "Title must be 200 characters or fewer"),
+});
+
 export type CreatePostInput = z.infer<typeof createPostSchema>;
+export type UpdatePostInput = z.infer<typeof updatePostSchema>;

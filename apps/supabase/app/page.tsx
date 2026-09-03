@@ -1,5 +1,6 @@
 import { Create } from "@/components/layout/create";
 import { Read } from "@/components/layout/read";
+import { Update } from "@/components/layout/update";
 
 export default function Home() {
   return (
@@ -12,8 +13,8 @@ export default function Home() {
         <div className="flex items-center justify-between">
           <Create />
           <Read />
-          {/* <Update />
-          <Delete /> */}
+          <Update />
+          {/* <Delete /> */}
         </div>
       </div>
     </div>
