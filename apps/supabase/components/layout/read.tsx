@@ -27,11 +27,6 @@ import {
 import { Spinner } from "../ui/spinner";
 import { toastManager } from "../ui/toast";
 
-type TagType = {
-  id: string;
-  name: string;
-};
-
 type PostType = {
   id: string;
   title: string;
@@ -40,7 +35,7 @@ type PostType = {
   created_at: string;
   updated_at: string;
   metadata: unknown;
-  tags: TagType[];
+  post_tags: { tags: { id: string; name: string } }[];
 };
 
 export function Read() {
@@ -63,6 +58,9 @@ export function Read() {
       const json = await fetchPostsAction();
 
       setPosts(Array.isArray(json.data) ? json.data : []);
+      console.log(posts);
+
+      console.log(json.data);
       toastManager.add({ title: "Posts loaded.", type: "success" });
     } catch (error) {
       if ((error as Error).name === "AbortError") return;
@@ -114,14 +112,14 @@ export function Read() {
                       {post.title}
                     </span>
 
-                    {post.tags?.map((tag) => (
+                    {post.post_tags?.map((tag) => (
                       <Badge
                         className="shrink-0 text-muted-foreground"
-                        key={tag.id}
+                        key={tag.tags.id}
                         style={{ fontSize: 11 }}
                         variant="outline"
                       >
-                        {tag.name}
+                        {tag.tags.name}
                       </Badge>
                     ))}
                   </div>
