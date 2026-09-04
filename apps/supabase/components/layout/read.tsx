@@ -7,7 +7,7 @@ import {
   ListIcon,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { fetchPostsAction } from "@/lib/actions/fetchPostsActions";
+import { fetchPostsAction } from "@/lib/actions/posts/fetchPostsActions";
 import type { Json } from "@/types/supabase";
 import {
   Accordion,

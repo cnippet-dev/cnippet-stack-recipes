@@ -5,7 +5,7 @@ import { createClient } from "@/utils/supabase/server";
 import {
   type UpdatePostInput,
   updatePostSchema,
-} from "../validations/post.schema";
+} from "../../validations/post.schema";
 
 export async function updatePostActions(id: string, input: UpdatePostInput) {
   const parsed = updatePostSchema.safeParse(input);

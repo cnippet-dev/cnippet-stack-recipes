@@ -3,7 +3,7 @@
 import { CircleAlertIcon, PlusIcon, XIcon } from "lucide-react";
 import type { KeyboardEvent } from "react";
 import { useState } from "react";
-import { createPostAction } from "@/lib/actions/createPostsActions";
+import { createPostAction } from "@/lib/actions/posts/createPostsActions";
 import { Button } from "../ui/button";
 import {
   Card,

@@ -1,55 +1,40 @@
-import Image from "next/image";
+import { UploadCloud } from "lucide-react";
+import MediaZone from "@/components/layout/mediaZone";
 import UploadForm from "@/components/layout/uploadForm";
-import { createClient } from "@/utils/supabase/server";
+import { fetchFileAction } from "@/lib/actions/storage/storage";
 
 export default async function Storage() {
-  const supabase = await createClient();
+  const data = await fetchFileAction();
 
-  const { data: media, error } = await supabase
-    .from("post_media")
-    .select("*")
-    .order("created_at", { ascending: false });
-
-  if (error) {
+  if (data.error) {
     return (
-      <p className="p-6 text-red-600">Failed to load media: {error.message}</p>
+      <div className="p-6">
+        <p className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-600 text-sm">
+          Failed to load media: {data.error.message}
+        </p>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-6 p-6">
-      <UploadForm />
+    <div className="min-h-screen bg-black p-10">
+      <div className="mx-auto mt-20 max-w-4xl space-y-6">
+        <div className="rounded-3xl bg-white p-8">
+          <h1 className="font-serif text-5xl leading-none tracking-tight">
+            <span className="text-6xl">S</span>torage
+          </h1>
+          <p className="mt-2 flex items-center gap-1.5 text-muted-foreground text-sm">
+            <UploadCloud className="h-4 w-4" />
+            Upload a new image or video.
+          </p>
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-        {media?.map((item) => {
-          const { data } = supabase.storage
-            .from(item.bucket)
-            .getPublicUrl(item.path);
+          <div className="mt-6 border-t pt-6">
+            <UploadForm />
+          </div>
+        </div>
 
-          return item.type === "image" ? (
-            <Image
-              alt="Post media"
-              className="h-auto w-full rounded object-cover"
-              height={450}
-              key={item.id}
-              src="https://naaoqefyrpkekqpbrcap.supabase.co/storage/v1/object/public/post-media/Screenshot%202026-09-04%20at%2011.46.11%20AM.png"
-              width={800}
-            />
-          ) : (
-            // biome-ignore lint/a11y/useMediaCaption: no track
-            <video
-              className="w-full rounded"
-              controls
-              key={item.id}
-              src={data.publicUrl}
-            />
-          );
-        })}
+        <MediaZone media={data.data} />
       </div>
-
-      {media?.length === 0 && (
-        <p className="text-gray-500 text-sm">No media uploaded yet.</p>
-      )}
     </div>
   );
 }

@@ -7,6 +7,9 @@ if (!supabaseUrl || !supabaseKey) {
   throw new Error("No SUPABASE_URL or SUPABASE_KEY");
 }
 
-export const createClient = () => {
-  createBrowserClient(supabaseUrl, supabaseKey);
-};
+const SUPABASE_URL: string = supabaseUrl;
+const SUPABASE_KEY: string = supabaseKey;
+
+export function createClient() {
+  return createBrowserClient(SUPABASE_URL, SUPABASE_KEY);
+}

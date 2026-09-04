@@ -7,8 +7,8 @@ import {
   Trash2Icon,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { deletePostAction } from "@/lib/actions/deletePostActions";
-import { fetchPostsAction } from "@/lib/actions/fetchPostsActions";
+import { deletePostAction } from "@/lib/actions/posts/deletePostActions";
+import { fetchPostsAction } from "@/lib/actions/posts/fetchPostsActions";
 import type { Json } from "@/types/supabase";
 import {
   Accordion,

@@ -5,7 +5,7 @@ import { createClient } from "@/utils/supabase/server";
 import {
   type CreatePostInput,
   createPostSchema,
-} from "../validations/post.schema";
+} from "../../validations/post.schema";
 
 export async function createPostAction(input: CreatePostInput) {
   const parsed = createPostSchema.safeParse(input);

@@ -2,8 +2,8 @@
 
 import { CircleAlertIcon, DownloadIcon, PenBox, PenIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { fetchPostsAction } from "@/lib/actions/fetchPostsActions";
-import { updatePostActions } from "@/lib/actions/updatePostActions";
+import { fetchPostsAction } from "@/lib/actions/posts/fetchPostsActions";
+import { updatePostActions } from "@/lib/actions/posts/updatePostActions";
 import type { Json } from "@/types/supabase";
 import {
   Accordion,
