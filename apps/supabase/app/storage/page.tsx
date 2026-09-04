@@ -36,6 +36,7 @@ export default async function Storage() {
               width={800}
             />
           ) : (
+            // biome-ignore lint/a11y/useMediaCaption: no track
             <video
               className="w-full rounded"
               controls
