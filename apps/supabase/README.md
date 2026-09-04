@@ -54,4 +54,8 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ="sb_publishable_"
 
 SUPABASE_SECRET_KEY="sb_secret_key"
 SUPABASE_ACCESS_TOKEN="sbp_key"
+<<<<<<< HEAD
 ```
+=======
+```
+>>>>>>> 642476b (feat: all)
