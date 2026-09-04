@@ -77,5 +77,14 @@ export async function deleteFileAction({
     throw new Error("asdf", error);
   }
 
-  console.log("done");
+  const { error: dbError } = await supabase
+    .from("post_media")
+    .delete()
+    .eq("id", id);
+
+  if (dbError) {
+    throw dbError;
+  }
+
+  revalidatePath("/storage");
 }
