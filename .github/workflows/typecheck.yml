@@ -2,7 +2,7 @@
 name: Typecheck
 
 on:
-  workflow_call:
+  workflow_call: {}
 
 env:
   BUN_VERSION: 1.3.8
