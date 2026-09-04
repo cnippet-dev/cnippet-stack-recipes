@@ -25,7 +25,11 @@ env:
   NEXT_PUBLIC_SUPABASE_URL: https://url.supabase.co
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_key
   SUPABASE_SECRET_KEY: sb_secret_key
+<<<<<<< HEAD
   SUPABASE_ACCESS_TOKEN: sbp_token
+=======
+  SUPABASE_ACCESS_TOKEN: sbp_key
+>>>>>>> 49e3b77 (fix: updated variables)
 
 jobs:
   build:
