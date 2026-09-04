@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
 
 export async function deletePostAction({ id }: { id: string }) {
@@ -14,6 +15,7 @@ export async function deletePostAction({ id }: { id: string }) {
     };
   }
 
+  revalidatePath("/posts");
   return {
     error: null,
     success: true,

@@ -29,6 +29,7 @@ export async function fetchPostsAction() {
       success: false,
     };
   }
+
   revalidatePath("/posts");
   return { data, success: true };
 }

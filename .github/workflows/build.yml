@@ -22,6 +22,10 @@ env:
   API_URL: http://localhost:3000
   UPSTASH_REDIS_REST_URL: https://your.upstash.io
   UPSTASH_REDIS_REST_TOKEN: your-token-asdfas0jpiuhewqnaskjdbxzmcoaidhf
+  NEXT_PUBLIC_SUPABASE_URL: https://url.supabase.co
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_key
+  SUPABASE_SECRET_KEY: sb_secret_key
+  SUPABASE_ACCESS_TOKEN: sbp_token
 
 jobs:
   build:
