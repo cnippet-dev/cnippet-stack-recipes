@@ -21,7 +21,10 @@ export async function uploadFileAction(formData: FormData) {
   const file = formData.get("file") as File;
 
   if (!file) {
-    throw new Error("Missing file.");
+    return {
+      error: "No file recieved",
+      success: false,
+    };
   }
 
   const supabase = await createClient();
@@ -31,7 +34,12 @@ export async function uploadFileAction(formData: FormData) {
     .from("post-media")
     .upload(filePath, file);
 
-  if (error) throw error;
+  if (error) {
+    return {
+      error: error.message,
+      success: false,
+    };
+  }
 
   const { error: dbError } = await supabase
     .from("post_media")
@@ -42,9 +50,18 @@ export async function uploadFileAction(formData: FormData) {
     })
     .select();
 
-  if (dbError) throw dbError;
+  if (dbError) {
+    return {
+      error: dbError.message,
+      success: false,
+    };
+  }
 
   revalidatePath("/storage");
+  return {
+    data,
+    success: true,
+  };
 }
 
 export async function fetchFileAction() {
@@ -56,7 +73,7 @@ export async function fetchFileAction() {
     .order("created_at", { ascending: false });
 
   if (error) {
-    return { error: error, success: false };
+    return { error: error.message, success: false };
   }
 
   return { data, success: true };
@@ -73,8 +90,7 @@ export async function deleteFileAction({
 
   const { error } = await supabase.storage.from("post_media").remove([path]);
   if (error) {
-    console.log(error);
-    throw new Error("asdf", error);
+    return { error: error.message, success: false };
   }
 
   const { error: dbError } = await supabase
@@ -83,8 +99,9 @@ export async function deleteFileAction({
     .eq("id", id);
 
   if (dbError) {
-    throw dbError;
+    return { error: dbError.message, success: false };
   }
 
   revalidatePath("/storage");
+  return { success: true };
 }

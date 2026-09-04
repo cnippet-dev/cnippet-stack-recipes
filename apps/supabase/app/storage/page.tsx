@@ -1,16 +1,18 @@
 import { UploadCloud } from "lucide-react";
 import MediaZone from "@/components/layout/mediaZone";
 import UploadForm from "@/components/layout/uploadForm";
+import { toastManager } from "@/components/ui/toast";
 import { fetchFileAction } from "@/lib/actions/storage/storage";
 
 export default async function Storage() {
   const data = await fetchFileAction();
 
   if (data.error) {
+    toastManager.add({ title: data.error, type: "error" });
     return (
       <div className="p-6">
         <p className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-600 text-sm">
-          Failed to load media: {data.error.message}
+          Failed to load media: {data.error}
         </p>
       </div>
     );
@@ -20,7 +22,7 @@ export default async function Storage() {
     <div className="min-h-screen bg-black p-10">
       <div className="mx-auto mt-20 max-w-4xl space-y-6">
         <div className="rounded-3xl bg-white p-8">
-          <h1 className="font-serif text-5xl leading-none tracking-tight">
+          <h1 className="text-4xl leading-none tracking-tighter">
             <span className="text-6xl">S</span>torage
           </h1>
           <p className="mt-2 flex items-center gap-1.5 text-muted-foreground text-sm">
@@ -33,7 +35,15 @@ export default async function Storage() {
           </div>
         </div>
 
-        <MediaZone media={data.data} />
+        {data.data && data.data.length > 0 ? (
+          <MediaZone media={data.data} />
+        ) : (
+          <div>
+            <p className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-600 text-sm">
+              No files.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

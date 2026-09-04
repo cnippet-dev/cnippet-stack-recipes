@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import Footer from "@/components/layout/footer";
 import Header from "@/components/layout/headers";
+import { AnchoredToastProvider, ToastProvider } from "@/components/ui/toast";
 
 const geistSans = Geist({
   subsets: ["latin"],
@@ -25,8 +27,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
     >
       <body className="flex min-h-full flex-col">
-        <Header />
-        {children}
+        <ToastProvider position="bottom-right">
+          <AnchoredToastProvider>
+            <Header />
+            {children}
+            <Footer />
+          </AnchoredToastProvider>
+        </ToastProvider>
       </body>
     </html>
   );
