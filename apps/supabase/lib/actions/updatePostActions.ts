@@ -23,7 +23,17 @@ export async function updatePostActions(id: string, input: UpdatePostInput) {
     .from("posts")
     .update({ content: parsed.data.content, title: parsed.data.title })
     .eq("id", id)
-    .select();
+    .select(`
+      id, 
+      title, 
+      slug, 
+      content, 
+      metadata, 
+      created_at, 
+      updated_at, 
+      post_tags (
+        tags (id, name)
+      )`);
 
   if (error) {
     return {

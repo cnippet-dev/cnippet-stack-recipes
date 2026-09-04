@@ -9,6 +9,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { deletePostAction } from "@/lib/actions/deletePostActions";
 import { fetchPostsAction } from "@/lib/actions/fetchPostsActions";
+import type { Json } from "@/types/supabase";
 import {
   Accordion,
   AccordionItem,
@@ -35,19 +36,15 @@ import {
 import { Spinner } from "../ui/spinner";
 import { toastManager } from "../ui/toast";
 
-// TODO Fix accordion shift
-
-type TagType = {
-  id: string;
-  name: string;
-};
-
 type PostType = {
   id: string;
   title: string;
   slug: string;
   content: string;
-  tags: TagType[];
+  created_at: string;
+  updated_at: string;
+  metadata: Json;
+  post_tags: { tags: { id: string; name: string } }[];
 };
 
 export function Delete() {
@@ -164,16 +161,19 @@ export function Delete() {
                       {post.title}
                     </span>
 
-                    {post.tags?.map((tag) => (
-                      <Badge
-                        className="shrink-0 text-muted-foreground"
-                        key={tag.id}
-                        style={{ fontSize: 11 }}
-                        variant="outline"
-                      >
-                        {tag.name}
-                      </Badge>
-                    ))}
+                    {post.post_tags.flatMap((pt) => {
+                      const tags = Array.isArray(pt.tags) ? pt.tags : [pt.tags];
+                      return tags.filter(Boolean).map((t) => (
+                        <Badge
+                          className="shrink-0 text-muted-foreground"
+                          key={t.id}
+                          style={{ fontSize: 11 }}
+                          variant="outline"
+                        >
+                          {t.name}
+                        </Badge>
+                      ));
+                    })}
                   </div>
                 </AccordionTrigger>
 

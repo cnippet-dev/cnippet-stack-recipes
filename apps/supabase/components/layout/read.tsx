@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { fetchPostsAction } from "@/lib/actions/fetchPostsActions";
+import type { Json } from "@/types/supabase";
 import {
   Accordion,
   AccordionItem,
@@ -34,14 +35,13 @@ type PostType = {
   content: string;
   created_at: string;
   updated_at: string;
-  metadata: unknown;
+  metadata: Json;
   post_tags: { tags: { id: string; name: string } }[];
 };
 
 export function Read() {
   const [posts, setPosts] = useState<PostType[]>([]);
   const [loading, setLoading] = useState(false);
-
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
@@ -110,16 +110,19 @@ export function Read() {
                       {post.title}
                     </span>
 
-                    {post.post_tags?.map((tag) => (
-                      <Badge
-                        className="shrink-0 text-muted-foreground"
-                        key={tag.tags.id}
-                        style={{ fontSize: 11 }}
-                        variant="outline"
-                      >
-                        {tag.tags.name}
-                      </Badge>
-                    ))}
+                    {post.post_tags.flatMap((pt) => {
+                      const tags = Array.isArray(pt.tags) ? pt.tags : [pt.tags];
+                      return tags.filter(Boolean).map((t) => (
+                        <Badge
+                          className="shrink-0 text-muted-foreground"
+                          key={t.id}
+                          style={{ fontSize: 11 }}
+                          variant="outline"
+                        >
+                          {t.name}
+                        </Badge>
+                      ));
+                    })}
                   </div>
                 </AccordionTrigger>
 

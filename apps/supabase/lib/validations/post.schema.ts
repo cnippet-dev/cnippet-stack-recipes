@@ -2,7 +2,7 @@ import z from "zod";
 
 export const createPostSchema = z.object({
   content: z.string().trim().min(1, "Content is required"),
-  metadata: z.record(z.string(), z.unknown()).optional(),
+  metadata: z.json().optional(),
   slug: z
     .string()
     .trim()

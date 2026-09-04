@@ -4,6 +4,7 @@ import { CircleAlertIcon, DownloadIcon, PenBox, PenIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { fetchPostsAction } from "@/lib/actions/fetchPostsActions";
 import { updatePostActions } from "@/lib/actions/updatePostActions";
+import type { Json } from "@/types/supabase";
 import {
   Accordion,
   AccordionItem,
@@ -40,7 +41,7 @@ type PostType = {
   content: string;
   created_at: string;
   updated_at: string;
-  metadata: unknown;
+  metadata: Json;
   post_tags: { tags: { id: string; name: string } }[];
 };
 
@@ -98,7 +99,7 @@ export function Update() {
       });
 
       if (!data) {
-        error;
+        console.log(error);
         return;
       }
 
