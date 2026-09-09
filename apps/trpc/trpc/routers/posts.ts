@@ -53,19 +53,6 @@ const updatePostInputSchema = updatePostSchema.extend({
 });
 
 export const postsRouter = createTRPCRouter({
-  byId: baseProcedure.input(idSchema).query(async ({ ctx, input }) => {
-    const post = await ctx.prisma.post.findUnique({
-      include: {
-        tags: true,
-      },
-      where: { id: input.id },
-    });
-
-    if (!post)
-      throw new TRPCError({ code: "NOT_FOUND", message: "Post not found" });
-    return post;
-  }),
-
   create: protectedProcedure
     .input(createPostSchema)
     .mutation(async ({ ctx, input }) => {

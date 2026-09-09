@@ -34,8 +34,6 @@ import {
 import { Spinner } from "../ui/spinner";
 import { toastManager } from "../ui/toast";
 
-// TODO Fix accordion shift
-
 type TagType = {
   id: string;
   name: string;
@@ -70,6 +68,10 @@ export function Delete() {
       setFetching(true);
 
       const json = await getPostsAction({ limit: 4, page: 1 });
+      if (!json.success) {
+        toastManager.add({ title: "Failed to load posts.", type: "error" });
+        throw new Error();
+      }
       setPosts(Array.isArray(json.data) ? json.data : []);
       toastManager.add({ title: "Posts loaded.", type: "success" });
     } catch (error) {

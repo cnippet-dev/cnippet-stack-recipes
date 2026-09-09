@@ -58,7 +58,11 @@ export function Read() {
     try {
       setLoading(true);
       const json = await getPostsAction({ limit: 4, page: 1 });
-      console.log(json);
+
+      if (!json.success) {
+        toastManager.add({ title: "Failed to load posts.", type: "error" });
+        throw new Error();
+      }
 
       setPosts(Array.isArray(json.data) ? json.data : []);
       toastManager.add({ title: "Posts loaded.", type: "success" });

@@ -1,19 +1,5 @@
 import z from "zod";
 
-export const listPostsQuerySchema = z.object({
-  // For offset pagination:
-  // page: z.coerce.number().int().min(1).default(1),
-
-  // For cursor pagination
-  cursor: z.string().cuid().optional(),
-  limit: z.coerce.number().int().positive().max(100).default(10),
-  page: z.coerce.number().int().positive().default(1),
-  search: z.string().trim().min(1).max(200).optional(),
-  sortBy: z.enum(["createdAt", "updatedAt", "title"]).default("createdAt"),
-  sortOrder: z.enum(["asc", "desc"]).default("desc"),
-  tag: z.string().trim().min(1).optional(),
-});
-
 export const createPostSchema = z.object({
   content: z.string().trim().min(1, "Content is required"),
   metadata: z.record(z.string(), z.unknown()).optional(),
@@ -34,6 +20,20 @@ export const createPostSchema = z.object({
     .max(200, "Title must be 200 characters or fewer"),
 });
 
+export const listPostsQuerySchema = z.object({
+  // For offset pagination:
+  // page: z.coerce.number().int().min(1).default(1),
+
+  // For cursor pagination
+  cursor: z.string().cuid().optional(),
+  limit: z.coerce.number().int().positive().max(100).default(10),
+  page: z.coerce.number().int().positive().default(1),
+  search: z.string().trim().min(1).max(200).optional(),
+  sortBy: z.enum(["createdAt", "updatedAt", "title"]).default("createdAt"),
+  sortOrder: z.enum(["asc", "desc"]).default("desc"),
+  tag: z.string().trim().min(1).optional(),
+});
+
 export const updatePostSchema = z.object({
   content: z.string().trim().min(1, "Content is required"),
   id: z.string().uuid(),
@@ -44,6 +44,11 @@ export const updatePostSchema = z.object({
     .max(200, "Title must be 200 characters or fewer"),
 });
 
+export const deletePostSchema = z.object({
+  id: z.string().uuid(),
+});
+
 export type ListPostQuery = z.infer<typeof listPostsQuerySchema>;
 export type CreatePostInput = z.infer<typeof createPostSchema>;
 export type UpdatePostInput = z.infer<typeof updatePostSchema>;
+export type DeletePostInput = z.infer<typeof deletePostSchema>;

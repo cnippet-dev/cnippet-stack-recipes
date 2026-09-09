@@ -69,6 +69,11 @@ export function Update() {
       setFetching(true);
 
       const json = await getPostsAction({ limit: 4, page: 1 });
+
+      if (!json.success) {
+        toastManager.add({ title: "Failed to load posts.", type: "error" });
+        throw new Error();
+      }
       setPosts(Array.isArray(json.data) ? json.data : []);
       toastManager.add({ title: "Posts loaded.", type: "success" });
     } catch (error) {
@@ -99,12 +104,12 @@ export function Update() {
         title: draftTitle,
       });
 
-      if (!updatedPost?.post) {
-        throw new Error("Failed to update post.");
+      if (!updatedPost?.success) {
+        throw new Error();
       }
 
       setPosts((currentPosts) =>
-        currentPosts.map((post) => (post.id === id ? updatedPost.post : post)),
+        currentPosts.map((post) => (post.id === id ? updatedPost.data : post)),
       );
       toastManager.add({ title: "Post updated", type: "success" });
       setEditingPost(null);
