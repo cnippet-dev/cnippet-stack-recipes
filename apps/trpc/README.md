@@ -1,9 +1,6 @@
 # tRPC recipe
+
 List of files which are essential to this template and additional files for usage.
-
-
-> Important: Update all the RSA policies. Current policies leave the application very vulnerable.
-> Also configure next.config.ts with your supabase credentials
 
 ## Priority Files
 
