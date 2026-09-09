@@ -3,7 +3,10 @@
 import { revalidatePath } from "next/cache";
 import type z from "zod";
 import { getServerCaller } from "@/trpc/server";
-import { listPostsQuerySchema } from "../validations/post.schema";
+import {
+  listPostsQuerySchema,
+  updatePostSchema,
+} from "../validations/post.schema";
 
 export async function createPostAction(data: {
   title: string;
@@ -22,12 +25,23 @@ export async function createPostAction(data: {
 
 export type ListPostQueryInput = z.input<typeof listPostsQuerySchema>;
 
-export async function getPostsAction(input: ListPostQueryInput) {
-  const parsed = listPostsQuerySchema.parse(input);
+export async function getPostsAction(data: ListPostQueryInput) {
+  const parsed = listPostsQuerySchema.parse(data);
   const caller = await getServerCaller();
   const post = await caller.posts.list(parsed);
 
   console.log(post.posts, "TYpe", typeof post.posts);
 
   return { data: post.posts, success: true };
+}
+
+export type UpdatePostQueryInput = z.input<typeof updatePostSchema>;
+
+export async function updatePostsAction(data: UpdatePostQueryInput) {
+  const parsed = updatePostSchema.parse(data);
+  const caller = await getServerCaller();
+  if (!parsed) return;
+  const post = await caller.posts.update(parsed);
+
+  return { post, success: true };
 }

@@ -36,6 +36,7 @@ export const createPostSchema = z.object({
 
 export const updatePostSchema = z.object({
   content: z.string().trim().min(1, "Content is required"),
+  id: z.string().uuid(),
   title: z
     .string()
     .trim()
