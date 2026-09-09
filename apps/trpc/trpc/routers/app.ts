@@ -1,10 +1,11 @@
-import { z } from "zod";
 import { baseProcedure, createTRPCRouter } from "../init";
+import { postsRouter } from "./posts";
 
 export const appRouter = createTRPCRouter({
-  list: baseProcedure.input(z.object({ text: z.string() })).query((opts) => {
-    return { greeting: `hello ${opts.input.text}` };
+  health: createTRPCRouter({
+    check: baseProcedure.query(() => ({ status: "ok" as const })),
   }),
+  posts: postsRouter,
 });
 
 export type AppRouter = typeof appRouter;
