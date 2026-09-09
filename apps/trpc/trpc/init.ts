@@ -32,16 +32,17 @@ const t = initTRPC
 
 export const createTRPCRouter = t.router;
 export const createCallerFactory = t.createCallerFactory;
-export const baseProcedure = t.procedure;
 
-export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
-  if (!ctx.session?.user) {
-    throw new TRPCError({
-      code: "UNAUTHORIZED",
-      message: "You must be signed in",
-    });
-  }
-  return next({
-    ctx: { ...ctx, session: ctx.session, user: ctx.session.user },
-  });
+const timingMiddleware = t.middleware(async ({ path, next }) => {
+  const start = Date.now();
+  const result = await next();
+  console.log(`[trpc] ${path} took ${Date.now() - start}ms`);
+  return result;
+});
+
+export const baseProcedure = t.procedure.use(timingMiddleware);
+
+export const protectedProcedure = baseProcedure.use(async ({ ctx, next }) => {
+  if (!ctx.session?.user) throw new TRPCError({ code: "UNAUTHORIZED" });
+  return next({ ctx: { ...ctx, user: ctx.session.user } });
 });

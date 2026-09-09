@@ -68,3 +68,5 @@ export const postsRouter = createTRPCRouter({
       return { id };
     }),
 });
+
+export const PostsRouter = typeof postsRouter;

@@ -5,7 +5,7 @@ import { headers } from "next/headers";
 import { cache } from "react";
 import { createTRPCContext } from "./init";
 import { makeQueryClient } from "./query-client";
-import { appRouter } from "./routers/posts";
+import { appRouter } from "./routers/app";
 
 export const getQueryClient = cache(makeQueryClient);
 
