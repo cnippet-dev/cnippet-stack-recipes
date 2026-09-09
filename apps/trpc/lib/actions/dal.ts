@@ -37,11 +37,18 @@ export async function getPostsAction(data: ListPostQueryInput) {
 
 export type UpdatePostQueryInput = z.input<typeof updatePostSchema>;
 
-export async function updatePostsAction(data: UpdatePostQueryInput) {
+export async function updatePostAction(data: UpdatePostQueryInput) {
   const parsed = updatePostSchema.parse(data);
   const caller = await getServerCaller();
   if (!parsed) return;
   const post = await caller.posts.update(parsed);
 
   return { post, success: true };
+}
+
+export async function deletePostAction(data: { id: string }) {
+  const caller = await getServerCaller();
+  await caller.posts.delete(data);
+
+  return { success: true };
 }

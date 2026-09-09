@@ -1,5 +1,6 @@
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { Create } from "@/components/layout/create";
+import { Delete } from "@/components/layout/delete";
 import { Read } from "@/components/layout/read";
 import { Update } from "@/components/layout/update";
 import { getQueryClient } from "@/trpc/server";
@@ -20,7 +21,7 @@ export default async function Home() {
             <Create />
             <Read />
             <Update />
-            {/* <Delete /> */}
+            <Delete />
           </div>
         </div>
       </div>
