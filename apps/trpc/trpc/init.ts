@@ -9,8 +9,8 @@ export const createTRPCContext = cache(async (opts: { headers: Headers }) => {
   //     ? await auth.api.getSession({ headers: await headers() })
   //     : await auth();
   //   return { prisma, session };
-
-  const session = { user: "user123" };
+  const user = { role: "USER", userId: "user123" };
+  const session = { user };
   return { prisma, session };
 });
 
@@ -45,4 +45,10 @@ export const baseProcedure = t.procedure.use(timingMiddleware);
 export const protectedProcedure = baseProcedure.use(async ({ ctx, next }) => {
   if (!ctx.session?.user) throw new TRPCError({ code: "UNAUTHORIZED" });
   return next({ ctx: { ...ctx, user: ctx.session.user } });
+});
+
+export const adminProcedure = protectedProcedure.use(async ({ ctx, next }) => {
+  if (ctx.user.role !== "ADMIN") throw new TRPCError({ code: "FORBIDDEN" });
+
+  return next({ ctx });
 });
