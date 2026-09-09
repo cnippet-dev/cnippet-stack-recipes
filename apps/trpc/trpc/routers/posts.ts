@@ -129,6 +129,7 @@ export const postsRouter = createTRPCRouter({
 
       const posts = await ctx.prisma.post.findMany({
         ...(cursor && { cursor: { id: cursor }, skip: 1 }),
+        include: { tags: true },
         orderBy: { [sortBy]: sortOrder },
         skip: (page - 1) * limit,
         take: limit + 1,

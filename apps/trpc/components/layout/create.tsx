@@ -3,7 +3,7 @@
 import { CircleAlertIcon, PlusIcon, XIcon } from "lucide-react";
 import type { KeyboardEvent } from "react";
 import { useState } from "react";
-import { createPostActon } from "@/lib/actions/dal";
+import { createPostAction } from "@/lib/actions/dal";
 import { Button } from "../ui/button";
 import {
   Card,
@@ -65,7 +65,7 @@ export function Create() {
     try {
       setLoading(true);
 
-      await createPostActon({
+      await createPostAction({
         content: payload.content,
         slug: payload.slug,
         tags: payload.tags,

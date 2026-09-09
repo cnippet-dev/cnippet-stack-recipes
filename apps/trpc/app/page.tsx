@@ -1,5 +1,6 @@
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { Create } from "@/components/layout/create";
+import { Read } from "@/components/layout/read";
 import { getQueryClient } from "@/trpc/server";
 
 export default async function Home() {
@@ -16,7 +17,7 @@ export default async function Home() {
           </h1>
           <div className="flex items-center justify-between">
             <Create />
-            {/* <Read /> */}
+            <Read />
             {/* <Update /> */}
             {/* <Delete /> */}
           </div>
