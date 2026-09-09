@@ -102,40 +102,44 @@ export const postsRouter = createTRPCRouter({
   list: baseProcedure
     .input(listPostsQuerySchema)
     .query(async ({ ctx, input }) => {
-      const { cursor, limit, page, search, sortBy, sortOrder, tag } = input;
+      try {
+        const { cursor, limit, page, search, sortBy, sortOrder, tag } = input;
 
-      const where: Prisma.PostWhereInput = {
-        ...(input.tag && { tags: { some: { name: tag } } }),
-        ...(search && {
-          OR: [
-            { title: { contains: search, mode: "insensitive" } },
-            { content: { contains: search, mode: "insensitive" } },
-          ],
-        }),
-      };
+        const where: Prisma.PostWhereInput = {
+          ...(input.tag && { tags: { some: { name: tag } } }),
+          ...(search && {
+            OR: [
+              { title: { contains: search, mode: "insensitive" } },
+              { content: { contains: search, mode: "insensitive" } },
+            ],
+          }),
+        };
 
-      const posts = await ctx.prisma.post.findMany({
-        ...(cursor && { cursor: { id: cursor }, skip: 1 }),
-        include: { tags: true },
-        orderBy: { [sortBy]: sortOrder },
-        skip: (page - 1) * limit,
-        take: limit + 1,
-        where,
-      });
+        const posts = await ctx.prisma.post.findMany({
+          ...(cursor && { cursor: { id: cursor }, skip: 1 }),
+          include: { tags: true },
+          orderBy: { [sortBy]: sortOrder },
+          skip: (page - 1) * limit,
+          take: limit + 1,
+          where,
+        });
 
-      let nextCursor: string | null = null;
+        let nextCursor: string | null = null;
 
-      if (posts.length > limit) {
-        const nextItem = posts.pop();
-        if (nextItem) {
-          nextCursor = nextItem.id;
+        if (posts.length > limit) {
+          const nextItem = posts.pop();
+          if (nextItem) {
+            nextCursor = nextItem.id;
+          }
         }
-      }
 
-      return {
-        nextCursor,
-        posts,
-      };
+        return {
+          nextCursor,
+          posts,
+        };
+      } catch (error) {
+        handlePrismaError(error, "Failed to list post");
+      }
     }),
 
   update: protectedProcedure

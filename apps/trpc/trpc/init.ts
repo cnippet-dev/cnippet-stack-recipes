@@ -4,7 +4,7 @@ import superjson from "superjson";
 import { ZodError } from "zod";
 import prisma from "@/lib/db/prisma";
 
-export const createTRPCContext = cache(async (opts: { headers: Headers }) => {
+export const createTRPCContext = cache(async (_opts: { headers: Headers }) => {
   //   const session = await auth.api?.getSession;
   //     ? await auth.api.getSession({ headers: await headers() })
   //     : await auth();

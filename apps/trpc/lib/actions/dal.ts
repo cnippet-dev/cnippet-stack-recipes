@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import type z from "zod";
 import { getServerCaller } from "@/trpc/server";
-import { handleActionError } from "../errors/action-result";
+import { handleActionError } from "../action-result";
 import {
   createPostSchema,
   deletePostSchema,
