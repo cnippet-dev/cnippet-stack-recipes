@@ -1,0 +1,34 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Post {
+  id      String @id @default(uuid())
+  title   String @db.VarChar(200)
+  slug    String @db.VarChar(200)
+  content String @db.Text
+  tags    Tag[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  metadata  Json?
+
+  @@unique([slug])
+  @@index([createdAt])
+  @@map("posts")
+}
+
+model Tag {
+  id   String @id @default(uuid())
+  name String @db.VarChar(200)
+
+  posts Post[]
+
+  @@unique([name])
+  @@map("tags")
+}

@@ -2,6 +2,7 @@ import { initTRPC, TRPCError } from "@trpc/server";
 import { cache } from "react";
 import superjson from "superjson";
 import { ZodError } from "zod";
+import prisma from "@/lib/db/prisma";
 
 export const createTRPCContext = cache(async (opts: { headers: Headers }) => {
   //   const session = await auth.api?.getSession;
@@ -10,7 +11,7 @@ export const createTRPCContext = cache(async (opts: { headers: Headers }) => {
   //   return { prisma, session };
 
   const session = { user: "user123" };
-  return { session };
+  return { prisma, session };
 });
 
 const t = initTRPC
