@@ -19,9 +19,6 @@ export async function createPostAction(data: CreatePostQueryInput) {
     const caller = await getServerCaller();
     const post = await caller.posts.create(parsed);
 
-    revalidatePath("/posts");
-    revalidatePath(`/posts/${post.id}`);
-
     return { data: post, success: true };
   } catch (err) {
     return handleActionError(err);
@@ -51,9 +48,6 @@ export async function updatePostAction(data: UpdatePostQueryInput) {
     const caller = await getServerCaller();
     const post = await caller.posts.update(parsed);
 
-    revalidatePath("/posts");
-    revalidatePath(`/posts/${post.id}`);
-
     return { data: post, success: true };
   } catch (err) {
     return handleActionError(err);
@@ -67,9 +61,6 @@ export async function deletePostAction(data: { id: string }) {
     const parsed = deletePostSchema.parse(data);
     const caller = await getServerCaller();
     await caller.posts.delete(parsed);
-
-    revalidatePath("/posts");
-    revalidatePath(`/posts/${parsed.id}`);
 
     return { data: { id: parsed.id }, success: true };
   } catch (err) {

@@ -1,8 +1,9 @@
 "use client";
 
-import { CircleAlertIcon, DownloadIcon, PenBox, PenIcon } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import { getPostsAction, updatePostAction } from "@/lib/actions/dal";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { PenBox, PenIcon } from "lucide-react";
+import { useState } from "react";
+import { useTRPC } from "@/trpc/client";
 import {
   Accordion,
   AccordionItem,
@@ -45,45 +46,35 @@ type PostType = {
   tags: TagType[];
 };
 
+const listInput = { limit: 4, page: 1 };
+
 export function Update() {
-  const [posts, setPosts] = useState<PostType[]>([]);
-  const [fetching, setFetching] = useState(false);
-  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+
+  const { data, isFetching } = useQuery(
+    trpc.posts.list.queryOptions(listInput),
+  );
+  const posts = data?.posts ?? [];
 
   const [editingPost, setEditingPost] = useState<PostType | null>(null);
   const [draftTitle, setDraftTitle] = useState("");
   const [draftContent, setDraftContent] = useState("");
 
-  const abortRef = useRef<AbortController | null>(null);
-
-  useEffect(() => {
-    return () => abortRef.current?.abort();
-  }, []);
-
-  const handleFetch = async () => {
-    abortRef.current?.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
-
-    try {
-      setFetching(true);
-
-      const json = await getPostsAction({ limit: 4, page: 1 });
-
-      if (!json.success) {
-        toastManager.add({ title: "Failed to load posts.", type: "error" });
-        throw new Error();
-      }
-      setPosts(Array.isArray(json.data) ? json.data : []);
-      toastManager.add({ title: "Posts loaded.", type: "success" });
-    } catch (error) {
-      if ((error as Error).name === "AbortError") return;
-      console.error(error);
-      toastManager.add({ title: "Failed to load posts.", type: "error" });
-    } finally {
-      setFetching(false);
-    }
-  };
+  const updatePost = useMutation(
+    trpc.posts.update.mutationOptions({
+      onError: () => {
+        toastManager.add({ title: "Failed to update post.", type: "error" });
+      },
+      onSuccess: () => {
+        queryClient.invalidateQueries({
+          queryKey: trpc.posts.list.queryKey(listInput),
+        });
+        toastManager.add({ title: "Post updated", type: "success" });
+        setEditingPost(null);
+      },
+    }),
+  );
 
   const openEditDialog = (post: PostType) => {
     setEditingPost(post);
@@ -91,34 +82,13 @@ export function Update() {
     setDraftContent(post.content);
   };
 
-  const handleUpdate = async () => {
+  const handleUpdate = () => {
     if (!editingPost) return;
-    const id = editingPost.id;
-
-    try {
-      setUpdatingId(id);
-
-      const updatedPost = await updatePostAction({
-        content: draftContent,
-        id,
-        title: draftTitle,
-      });
-
-      if (!updatedPost?.success) {
-        throw new Error();
-      }
-
-      setPosts((currentPosts) =>
-        currentPosts.map((post) => (post.id === id ? updatedPost.data : post)),
-      );
-      toastManager.add({ title: "Post updated", type: "success" });
-      setEditingPost(null);
-    } catch (error) {
-      console.error(error);
-      toastManager.add({ title: "Failed to update post.", type: "error" });
-    } finally {
-      setUpdatingId(null);
-    }
+    updatePost.mutate({
+      content: draftContent,
+      id: editingPost.id,
+      title: draftTitle,
+    });
   };
 
   return (
@@ -134,6 +104,7 @@ export function Update() {
           <PenBox className="size-3 text-blue-500" strokeWidth={2} />
           <p className="font-medium tracking-tight">Update posts.</p>
         </CardTitle>
+
         <CardPanel className="mb-4 p-0">
           <Accordion className="w-full rounded-lg last:border-b-1">
             {posts.map((post) => (
@@ -145,11 +116,7 @@ export function Update() {
                 <AccordionTrigger className="w-full py-0">
                   <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
                     <span className="flex min-w-0 items-center gap-2 truncate">
-                      <Badge
-                        // asChild
-                        className="cursor-pointer"
-                        variant="info"
-                      >
+                      <Badge className="cursor-pointer" variant="info">
                         <span
                           onClick={(e) => {
                             e.stopPropagation();
@@ -168,7 +135,6 @@ export function Update() {
                           <PenIcon className="size-3" />
                         </span>
                       </Badge>
-
                       {post.title}
                     </span>
 
@@ -184,7 +150,6 @@ export function Update() {
                     ))}
                   </div>
                 </AccordionTrigger>
-
                 <AccordionPanel className="min-w-0">
                   <div className="break-words">{post.content}</div>
                 </AccordionPanel>
@@ -192,23 +157,16 @@ export function Update() {
             ))}
           </Accordion>
         </CardPanel>
+
         <CardFooter
           className="flex-col gap-2 px-0"
           style={{ padding: "4px 0 0 0" }}
         >
-          <Button className="w-full" disabled={fetching} onClick={handleFetch}>
-            {fetching ? (
-              <Spinner />
-            ) : (
-              <>
-                <DownloadIcon /> Get Posts
-              </>
-            )}
-          </Button>
-          <div className="flex gap-1 truncate text-muted-foreground text-xs">
-            <CircleAlertIcon className="size-3 h-lh shrink-0" />
-            <p>This might take a few seconds to complete.</p>
-          </div>
+          {isFetching && (
+            <div className="flex items-center gap-2 text-muted-foreground text-xs">
+              <Spinner /> Syncing...
+            </div>
+          )}
         </CardFooter>
       </CardContent>
 
@@ -243,14 +201,14 @@ export function Update() {
 
           <DialogFooter>
             <Button
-              disabled={updatingId !== null}
+              disabled={updatePost.isPending}
               onClick={() => setEditingPost(null)}
               variant="outline"
             >
               Cancel
             </Button>
-            <Button disabled={updatingId !== null} onClick={handleUpdate}>
-              {updatingId !== null ? <Spinner /> : "Save"}
+            <Button disabled={updatePost.isPending} onClick={handleUpdate}>
+              {updatePost.isPending ? <Spinner /> : "Save"}
             </Button>
           </DialogFooter>
         </DialogContent>

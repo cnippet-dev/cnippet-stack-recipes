@@ -5,10 +5,13 @@ import { Footer } from "@/components/layout/footer";
 import Header from "@/components/layout/header";
 import { Read } from "@/components/layout/read";
 import { Update } from "@/components/layout/update";
-import { getQueryClient } from "@/trpc/server";
+import { getQueryClient, trpc } from "@/trpc/server";
 
 export default async function Home() {
   const queryClient = getQueryClient();
+  const listInput = { limit: 4, page: 1 } as const;
+
+  await queryClient.prefetchQuery(trpc.posts.list.queryOptions(listInput));
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>

@@ -1,13 +1,9 @@
 "use client";
 
-import {
-  CircleAlertIcon,
-  DownloadIcon,
-  InfoIcon,
-  Trash2Icon,
-} from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import { deletePostAction, getPostsAction } from "@/lib/actions/dal";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { InfoIcon, Trash2Icon } from "lucide-react";
+import { useState } from "react";
+import { useTRPC } from "@/trpc/client";
 import {
   Accordion,
   AccordionItem,
@@ -47,67 +43,42 @@ type PostType = {
   tags: TagType[];
 };
 
+const listInput = { limit: 4, page: 1 };
 export function Delete() {
-  const [posts, setPosts] = useState<PostType[]>([]);
-  const [fetching, setFetching] = useState(false);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+
+  const { data, isFetching } = useQuery(
+    trpc.posts.list.queryOptions(listInput),
+  );
+
+  const posts = data?.posts ?? [];
+
   const [deletingPost, setDeletingPost] = useState<PostType | null>(null);
 
-  const abortRef = useRef<AbortController | null>(null);
-
-  useEffect(() => {
-    return () => abortRef.current?.abort();
-  }, []);
-
-  const handleFetch = async () => {
-    abortRef.current?.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
-
-    try {
-      setFetching(true);
-
-      const json = await getPostsAction({ limit: 4, page: 1 });
-      if (!json.success) {
-        toastManager.add({ title: "Failed to load posts.", type: "error" });
-        throw new Error();
-      }
-      setPosts(Array.isArray(json.data) ? json.data : []);
-      toastManager.add({ title: "Posts loaded.", type: "success" });
-    } catch (error) {
-      if ((error as Error).name === "AbortError") return;
-      console.error(error);
-      toastManager.add({ title: "Failed to load posts.", type: "error" });
-    } finally {
-      setFetching(false);
-    }
-  };
+  const deletePost = useMutation(
+    trpc.posts.delete.mutationOptions({
+      onError: () => {
+        toastManager.add({ title: "Failed to update post", type: "error" });
+        setDeletingPost(null);
+      },
+      onSuccess: () => {
+        queryClient.invalidateQueries({
+          queryKey: trpc.posts.list.queryKey(listInput),
+        });
+        toastManager.add({ title: "Post deleted", type: "success" });
+        setDeletingPost(null);
+      },
+    }),
+  );
 
   const openDeleteDialog = (post: PostType) => {
     setDeletingPost(post);
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!deletingPost) return;
-    const id = deletingPost.id;
-    const prevPosts = posts;
-
-    setPosts(posts.filter((post) => post.id !== id));
-
-    try {
-      setDeletingId(id);
-
-      await deletePostAction({ id });
-
-      toastManager.add({ title: "Post deleted", type: "success" });
-      setDeletingPost(null);
-    } catch (error) {
-      console.error(error);
-      setPosts(prevPosts);
-      toastManager.add({ title: "Failed to delete post.", type: "error" });
-    } finally {
-      setDeletingId(null);
-    }
+    deletePost.mutate({ id: deletingPost.id });
   };
 
   return (
@@ -185,19 +156,11 @@ export function Delete() {
           className="flex-col gap-2 px-0"
           style={{ padding: "4px 0 0 0" }}
         >
-          <Button className="w-full" disabled={fetching} onClick={handleFetch}>
-            {fetching ? (
-              <Spinner />
-            ) : (
-              <>
-                <DownloadIcon /> Get Posts
-              </>
-            )}
-          </Button>
-          <div className="flex gap-1 text-muted-foreground text-xs">
-            <CircleAlertIcon className="size-3 h-lh shrink-0" />
-            <p>This might take a few seconds to complete.</p>
-          </div>
+          {isFetching && (
+            <div className="flex items-center gap-2 text-muted-foreground text-xs">
+              <Spinner /> Syncing...
+            </div>
+          )}
         </CardFooter>
       </CardContent>
 
@@ -221,18 +184,18 @@ export function Delete() {
 
           <DialogFooter>
             <Button
-              disabled={deletingId !== null}
+              disabled={deletePost.isPending}
               onClick={() => setDeletingPost(null)}
               variant="outline"
             >
               Cancel
             </Button>
             <Button
-              disabled={deletingId !== null}
+              disabled={deletePost.isPending}
               onClick={handleDelete}
               variant="destructive"
             >
-              {deletingId !== null ? <Spinner /> : "Delete"}
+              {deletePost.isPending ? <Spinner /> : "Delete"}
             </Button>
           </DialogFooter>
         </DialogContent>

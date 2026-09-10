@@ -1,13 +1,13 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import {
   BookTextIcon,
   CircleAlertIcon,
   DownloadIcon,
   ListIcon,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import { getPostsAction } from "@/lib/actions/dal";
+import { useTRPC } from "@/trpc/client";
 import {
   Accordion,
   AccordionItem,
@@ -27,54 +27,15 @@ import {
 import { Spinner } from "../ui/spinner";
 import { toastManager } from "../ui/toast";
 
-type TagType = {
-  id: string;
-  name: string;
-};
-
-type PostType = {
-  id: string;
-  title: string;
-  slug: string;
-  content: string;
-  tags: TagType[];
-};
+const listInput = { limit: 4, page: 1 };
 
 export function Read() {
-  const [posts, setPosts] = useState<PostType[]>([]);
-  const [loading, setLoading] = useState(false);
+  const trpc = useTRPC();
+  const { data, isFetching, refetch } = useQuery(
+    trpc.posts.list.queryOptions(listInput),
+  );
 
-  const abortRef = useRef<AbortController | null>(null);
-
-  useEffect(() => {
-    return () => abortRef.current?.abort();
-  }, []);
-
-  const handleFetch = async () => {
-    abortRef.current?.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
-
-    try {
-      setLoading(true);
-      const json = await getPostsAction({ limit: 4, page: 1 });
-
-      if (!json.success) {
-        toastManager.add({ title: "Failed to load posts.", type: "error" });
-        throw new Error();
-      }
-
-      setPosts(Array.isArray(json.data) ? json.data : []);
-      toastManager.add({ title: "Posts loaded.", type: "success" });
-    } catch (error) {
-      if ((error as Error).name === "AbortError") return;
-      console.error(error);
-      toastManager.add({ title: "Failed to load posts.", type: "error" });
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  const posts = data?.posts ?? [];
   return (
     <Card className="h-fit w-[320px] min-w-0 max-w-full">
       <CardHeader style={{ padding: "16px", paddingBottom: 0 }}>
@@ -141,8 +102,23 @@ export function Read() {
           className="flex-col gap-2 px-0"
           style={{ padding: "4px 0 0 0" }}
         >
-          <Button className="w-full" disabled={loading} onClick={handleFetch}>
-            {loading ? (
+          <Button
+            className="w-full"
+            disabled={isFetching}
+            onClick={() =>
+              refetch()
+                .then(() => {
+                  toastManager.add({ title: "Post fetched", type: "success" });
+                })
+                .catch(() => {
+                  toastManager.add({
+                    title: "Failed to fetch post",
+                    type: "error",
+                  });
+                })
+            }
+          >
+            {isFetching ? (
               <Spinner />
             ) : (
               <>
