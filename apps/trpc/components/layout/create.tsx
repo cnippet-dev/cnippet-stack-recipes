@@ -1,9 +1,10 @@
 "use client";
 
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { CircleAlertIcon, PlusIcon, XIcon } from "lucide-react";
 import type { KeyboardEvent } from "react";
 import { useState } from "react";
-import { createPostAction } from "@/lib/actions/dal";
+import { useTRPC } from "@/trpc/client";
 import { Button } from "../ui/button";
 import {
   Card,
@@ -19,8 +20,26 @@ import { Spinner } from "../ui/spinner";
 import { Textarea } from "../ui/textarea";
 import { toastManager } from "../ui/toast";
 
+const listInput = { limit: 4, page: 1 };
+
 export function Create() {
-  const [loading, setLoading] = useState<boolean>(false);
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+
+  const post = useMutation(
+    trpc.posts.create.mutationOptions({
+      onError: () => {
+        toastManager.add({ title: "Failed to update post.", type: "error" });
+      },
+      onSuccess: () => {
+        queryClient.invalidateQueries({
+          queryKey: trpc.posts.list.queryKey(listInput),
+        });
+        toastManager.add({ title: "Post updated", type: "success" });
+      },
+    }),
+  );
+
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState<string>("");
 
@@ -62,30 +81,12 @@ export function Create() {
       title: String(formData.get("title") ?? ""),
     };
 
-    try {
-      setLoading(true);
-
-      await createPostAction({
-        content: payload.content,
-        slug: payload.slug,
-        tags: payload.tags,
-        title: payload.title,
-      });
-
-      toastManager.add({
-        title: "Post created successfully.",
-        type: "success",
-      });
-
-      form.reset();
-      setTags([]);
-      setTagInput("");
-    } catch (error) {
-      toastManager.add({ title: "Failed to create post.", type: "error" });
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
+    post.mutate({
+      content: payload.content,
+      slug: payload.slug,
+      tags: payload.tags,
+      title: payload.title,
+    });
   };
 
   return (
@@ -173,8 +174,8 @@ export function Create() {
             )}
           </Field>
 
-          <Button className="w-full" disabled={loading} type="submit">
-            {loading ? (
+          <Button className="w-full" disabled={post.isPending} type="submit">
+            {post.isPending ? (
               <Spinner />
             ) : (
               <>
