@@ -41,7 +41,7 @@ jobs:
       fail-fast: false
       matrix:
         # Migrated recipes. Phase 6 derives this from changed paths.
-        recipe: [prisma, better-auth, authjs, rest-api-patterns, drizzle, supabase]
+        recipe: [prisma, better-auth, authjs, rest-api-patterns, drizzle, supabase, trpc]
     steps:
       - uses: actions/checkout@v4
 

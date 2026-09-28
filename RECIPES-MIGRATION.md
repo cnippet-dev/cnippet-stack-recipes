@@ -399,7 +399,7 @@ Lists every file under `recipes/<name>/files/` that no step claims. Fails if any
 
 ### Phase 3 — Migrate the remaining five
 
-`better-auth` → `authjs` → `rest` → `drizzle` → `supabase`. One PR each, same procedure as Phase 1.
+`better-auth` → `authjs` → `rest` → `drizzle` → `supabase`, then `trpc` (added later). One PR each, same procedure as Phase 1.
 
 While migrating, fix the bugs rather than porting them:
 
@@ -516,7 +516,7 @@ Never copy these — they belong to the host, not the recipe:
 - `app/generated/**` (Prisma output — `prisma generate` makes it)
 - `next-env.d.ts`, `.gitignore`, `package.json`, `bun.lock`
 - `postcss.config.mjs`, `tsconfig.json` *(unless the recipe's whole point is changing it, like TS strict mode)*
-- `components/ui/**` — these come from the `@cnippet` registry via the shadcn CLI. **Declare them as a `registryComponents` list in the config so the CLI runs `shadcn add` instead**, or the recipe ships a stale fork of Cnippet UI. _(decide the field name with cnippet-stack)_
+- `components/ui/**` — these come from the `@cnippet` registry via the shadcn CLI. **Declare them in `cnippetUiComponents` (a list of registry names, e.g. `["button", "card"]`) so the CLI runs `shadcn add @cnippet/<name>` instead**, or the recipe ships a stale fork of Cnippet UI. List every component the recipe's files import from `components/ui/`, by `@/` alias or relative path.
 - Any `.md` guide file (B7)
 
 ### How to break code into steps
@@ -541,15 +541,28 @@ Note the ordering constraint: **step 3 imports what step 2 creates.** Reversed, 
 |---|---|---|
 | `apps/prisma` | `recipes/prisma` + `demos/prisma` | Pilot. Fix B5, B6, B7. |
 | `apps/better-auth` | `recipes/better-auth` + `demos/better-auth` | Fix B1, B2, B6. Flagship — keep the demo. |
-| `apps/authjs` | `recipes/nextauth` _(decide name)_ | Fix B3, B5. Guide list calls it "NextAuth.js (Auth.js v5)" — pick one name and use it in both repos. |
+| `apps/authjs` | `recipes/authjs` | Fix B3, B5. Name decided (D5): `authjs` everywhere — the guide slug on `next.cnippet.dev` must be `authjs` too. |
 | `apps/rest` | `recipes/rest-api-patterns` | Fix B5. Maps to guide #21. |
 | `apps/drizzle` | `recipes/drizzle` | Fix B4. Guide #12, tier **paid**. |
 | `apps/supabase` | `recipes/supabase` | Fix B5. The RLS warning becomes a blocking manual step. |
+| `apps/trpc` | `recipes/trpc` | Added after this plan was written. `requires: ["prisma"]`, host `with-prisma`. The placeholder session in `trpc/init.ts` is a manual step. |
 | `apps/reference` | _(decide)_ | Clarify its purpose first. |
 | `packages/ui` | _(decide)_ | B11 — populate or delete. |
 | `packages/eslint-config`, `packages/typescript-config` | unchanged | Hosts and demos consume them |
 
 One naming decision to settle before Phase 3: **recipe names must match between this repo, `cnippet-stack`'s registry, and the guide slug on `next.cnippet.dev`.** `authjs` vs `nextauth` vs `next-auth` will cause a broken guide link otherwise. Write the chosen names down.
+
+Chosen names (all three places must use these):
+
+| Recipe | Name |
+|---|---|
+| Prisma | `prisma` |
+| Better Auth | `better-auth` |
+| Auth.js (NextAuth v5) | `authjs` |
+| REST API patterns | `rest-api-patterns` |
+| Drizzle | `drizzle` |
+| Supabase | `supabase` |
+| tRPC | `trpc` |
 
 ---
 
@@ -608,10 +621,10 @@ Answer these before or during the phase that needs them.
 | D1 | Which host apps? Three (`app-router-src`, `app-router-no-src`, `with-prisma`) or also `with-drizzle` / `no-orm`? | Phase 0 |
 | D2 | `packages/ui` — populate or delete? (B11) | Phase 0 |
 | D3 | What is `apps/reference` for? Keep, move to `demos/`, or delete? | Phase 5 |
-| D4 | Which recipes get a demo? Suggested: `better-auth`, `prisma`. | Phase 4 |
-| D5 | Recipe naming — `authjs` vs `nextauth` vs `next-auth`, and must match the guide slug | Phase 3 |
+| ~~D4~~ | ~~Which recipes get a demo?~~ — **decided:** `better-auth` and `prisma`. All other apps are deleted in Phase 5. | Phase 4 |
+| ~~D5~~ | ~~Recipe naming~~ — **decided:** `authjs`, matching `cnippet-stack`'s registry. Guide slug on `next.cnippet.dev` still to be aligned (out of scope here, §10). | Phase 3 |
 | D6 | How does `cnippet-stack` read this repo? Submodule, pinned CI checkout, or published package? | Phase 7 |
-| D7 | Field name and shape for registry-sourced UI components (`components/ui/**` → `shadcn add`) | Phase 1 |
+| ~~D7~~ | ~~Field name and shape for registry-sourced UI components~~ — **decided:** `cnippetUiComponents: string[]`, already in upstream `RecipeManifest` | Phase 1 |
 
 ---
 

@@ -1,7 +1,7 @@
 // Validates every recipes/<name>/recipe.config.ts (or only the names passed as
 // arguments). Usage: bun run validate-recipes [name ...]
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { join, posix, relative, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { RecipeConfig, toManifest } from "./types";
 
@@ -18,6 +18,36 @@ const listDirs = (dir: string): string[] =>
 
 const countSentences = (text: string): number =>
   text.split(/[.!?](\s|$)/).filter((part) => part.trim().length > 0).length;
+
+const listFiles = (dir: string): string[] =>
+  readdirSync(dir).flatMap((entry) => {
+    const path = join(dir, entry);
+    return statSync(path).isDirectory() ? listFiles(path) : [path];
+  });
+
+const UI_IMPORT = /\bfrom\s+["']([^"']+)["']/g;
+const UI_PATH = /^components\/ui\/([a-z0-9-]+)$/;
+
+// Registry components the files import from `components/ui/`, by `@/` alias
+// or relative path. Paths are relative to `files/`, mirroring the target app.
+function importedUiComponents(filesDir: string): Set<string> {
+  const used = new Set<string>();
+  for (const path of listFiles(filesDir)) {
+    const file = relative(filesDir, path).split(/[\\/]/).join("/");
+    for (const [, specifier] of readFileSync(path, "utf8").matchAll(
+      UI_IMPORT,
+    )) {
+      const target = specifier.startsWith("@/")
+        ? specifier.slice(2)
+        : specifier.startsWith(".")
+          ? posix.join(posix.dirname(file), specifier)
+          : "";
+      const match = target.match(UI_PATH);
+      if (match) used.add(match[1]);
+    }
+  }
+  return used;
+}
 
 async function validateRecipe(
   name: string,
@@ -91,6 +121,30 @@ async function validateRecipe(
             );
           }
         }
+      }
+    }
+  }
+
+  if (existsSync(filesDir)) {
+    if (existsSync(join(filesDir, "components", "ui"))) {
+      errors.push(
+        "files/components/ui/ must not exist; declare registry components in `cnippetUiComponents`",
+      );
+    }
+    const declared = new Set(config.cnippetUiComponents ?? []);
+    const used = importedUiComponents(filesDir);
+    for (const component of used) {
+      if (!declared.has(component)) {
+        errors.push(
+          `cnippetUiComponents: "${component}" is imported but not declared`,
+        );
+      }
+    }
+    for (const component of declared) {
+      if (!used.has(component)) {
+        errors.push(
+          `cnippetUiComponents: "${component}" is declared but never imported`,
+        );
       }
     }
   }
