@@ -38,7 +38,7 @@
     "sharp",
     "unrs-resolver"
   ],
-  "name": "better-auth",
+  "name": "demo-better-auth",
   "private": true,
   "scripts": {
     "build": "next build",

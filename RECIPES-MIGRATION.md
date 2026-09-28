@@ -425,6 +425,8 @@ Decide which apps stay runnable. Suggested: `better-auth` and `prisma` only, to 
 
 **Acceptance:** demos build and run. Recipes still validate independently of demos.
 
+Done notes: step 2 was read as "strip the prose file lists" — the README "Priority Files" sections (which carried B1, B2, B5) were replaced by the demo note, run steps and the env vars the code actually reads. No working code was removed. Workspace packages were renamed `demo-prisma` / `demo-better-auth` so they no longer shadow the real `prisma` and `better-auth` npm packages in the lockfile.
+
 ### Phase 5 — Delete the old apps
 
 Only once Phases 1–4 are all green.

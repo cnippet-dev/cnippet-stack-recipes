@@ -30,8 +30,7 @@
       "!**/apps/ui/public/",
       "!**/apps/authjs/app/generated",
       "!**/apps/authjs/app/generated/prisma",
-      "!**/apps/prisma/app/generated/prisma",
-      "!**/apps/better-auth/app/generated/prisma",
+      "!**/demos/*/app/generated/prisma",
       "!**/hosts/*/app/generated/prisma"
     ]
   },

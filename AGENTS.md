@@ -10,6 +10,7 @@ This repo is the source of truth for recipe code consumed by `cnippet-stack` and
 
 - `hosts/*` — minimal Next.js apps recipes are composed into for CI. Keep them current; add nothing recipe-specific.
 - `recipes/*` — `recipe.config.ts` + `files/`. No `package.json`.
+- `demos/*` — full runnable apps (`prisma`, `better-auth`). Not the source of truth: a recipe change goes in `recipes/`, never only in a demo.
 - `scripts/*` — recipe validation, coverage and composition.
 - Read files on disk, never an app's README — the READMEs have known errors.
 - better-auth, Prisma 7, Next 16, Drizzle and Supabase move faster than training data: check current docs before touching their APIs.
