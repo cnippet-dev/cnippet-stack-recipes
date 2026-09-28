@@ -33,3 +33,9 @@ jobs:
     needs: [format, lint, typecheck]
     uses: ./.github/workflows/build.yml
     secrets: inherit
+
+  recipes:
+    name: Recipes
+    needs: [format, lint, typecheck]
+    uses: ./.github/workflows/recipes.yml
+    secrets: inherit

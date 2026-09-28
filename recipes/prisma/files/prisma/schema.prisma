@@ -1,0 +1,12 @@
+generator client {
+    provider = "prisma-client"
+    // #if detection.srcDir
+    output   = "../src/app/generated/prisma"
+    // #else
+    output   = "../app/generated/prisma"
+    // #endif
+}
+
+datasource db {
+    provider = "postgresql"
+}

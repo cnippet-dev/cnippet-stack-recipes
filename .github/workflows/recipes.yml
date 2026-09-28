@@ -1,0 +1,63 @@
+# Validates every recipes/*/recipe.config.ts and checks every file under
+# files/ is claimed by a step, then composes each migrated
+# recipe into the hosts it declares and runs `next build` + `tsc --noEmit`.
+# Env values come from each recipe's declared envVars (placeholders written by
+# scripts/compose.ts), not from a shared env block.
+name: Recipes
+
+on:
+  workflow_call: {}
+
+env:
+  BUN_VERSION: 1.3.14
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  NEXT_TELEMETRY_DISABLED: 1
+
+jobs:
+  validate:
+    name: Validate recipes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Validate recipes
+        run: bun run validate-recipes
+
+      - name: Check every file is claimed by a step
+        run: bun run check-coverage
+
+  compose:
+    name: Compose ${{ matrix.recipe }}
+    needs: validate
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Migrated recipes. Phase 6 derives this from changed paths.
+        recipe: [prisma, better-auth, authjs, rest-api-patterns, drizzle, supabase]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Cache bun dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
+          restore-keys: ${{ runner.os }}-bun-
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Compose and build into each declared host
+        run: bun run compose ${{ matrix.recipe }} --build

@@ -2,8 +2,10 @@
   "devDependencies": {
     "@biomejs/biome": "2.5.3",
     "prettier": "^3.7.4",
+    "ts-morph": "^25.0.1",
     "turbo": "^2.10.4",
-    "typescript": "5.9.2"
+    "typescript": "5.9.2",
+    "zod": "^3.24.1"
   },
   "devEngines": {
     "packageManager": {
@@ -18,14 +20,18 @@
   "private": true,
   "scripts": {
     "build": "turbo run build",
+    "check-coverage": "bun scripts/check-coverage.ts",
     "check-types": "turbo run check-types",
+    "compose": "bun scripts/compose.ts",
     "dev": "turbo run dev",
     "format": "biome format --write .",
     "format:all": "biome check --write --unsafe --no-errors-on-unmatched",
-    "lint": "turbo run lint --"
+    "lint": "turbo run lint --",
+    "validate-recipes": "bun scripts/validate-recipes.ts"
   },
   "workspaces": [
     "apps/*",
+    "hosts/*",
     "packages/*"
   ]
 }
