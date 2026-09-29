@@ -1,9 +1,11 @@
 import "dotenv/config";
-import { defineConfig, env } from "prisma/config";
+import { defineConfig } from "prisma/config";
 
+// This host only runs `prisma generate` (CI composition), which never
+// connects. `env()` throws when DATABASE_URL is unset, so read it directly.
 export default defineConfig({
   datasource: {
-    url: env("DATABASE_URL"),
+    url: process.env.DATABASE_URL,
   },
   migrations: {
     path: "prisma/migrations",

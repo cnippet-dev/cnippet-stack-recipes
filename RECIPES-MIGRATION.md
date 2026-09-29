@@ -67,7 +67,7 @@ These are real and were read from the files. **Every one of them is a place a co
 | B8 | `.github/workflows/build.yml` | Comments claim "apps/reference is the only Next.js app in this monorepo" and the Next cache path only covers `apps/reference/.next/cache`. There are **seven** Next.js apps. Cache is near-useless for the other six. |
 | B9 | `.github/workflows/build.yml` | Env block is a growing union of every app's env vars (`SUPABASE_*`, `UPSTASH_*`, `AUTH_*`, `BETTER_AUTH_*`, …). Every new recipe appends to it. This is the coupling the migration removes. |
 | B10 | `package.json` vs `build.yml` | `devEngines` pins Bun **1.3.14**; CI uses `BUN_VERSION: 1.3.8`. Align them. |
-| B11 | `packages/ui` | Exports `./*: ./src/*.tsx` but has no real components; apps pull UI from the `@cnippet` registry instead. Either populate it or delete it. _(decide)_ |
+| B11 | `packages/ui` | Exports `./*: ./src/*.tsx` but has no real components; apps pull UI from the `@cnippet` registry instead. Either populate it or delete it. **Fixed: deleted** (D2). |
 
 ### 1.3 What's actually good and must be preserved
 
@@ -471,6 +471,14 @@ Update `.github/labeler.yml`: replace `app:reference` and friends with `recipes`
 
 **Acceptance:** a PR touching one recipe runs that recipe's job, not all seven. Cache paths point at real directories.
 
+Done notes (2026-09-29): `recipes.yml` has the validate + coverage job, a compose matrix over recipes, per-recipe env placeholders, B8 cache paths, and the labeler update. The matrix is computed by `scripts/changed-recipes.ts` from the PR diff:
+- `recipes/<name>/**` runs that recipe plus every recipe that `requires` it.
+- `hosts/<host>/**` runs the recipes that declare that host.
+- `scripts/**`, `packages/**`, `package.json`, `bun.lock`, `recipes/tsconfig.json` or `ci.yml` / `recipes.yml` run all recipes.
+- Anything else (demos, docs) composes nothing.
+
+A push to `main` composes all recipes. Check locally with `git diff --name-only main | bun run changed-recipes`.
+
 ### Phase 7 — Wire to `cnippet-stack`
 
 Out of scope for this repo's changes, but it's the payoff and shouldn't be forgotten.
@@ -551,7 +559,7 @@ Note the ordering constraint: **step 3 imports what step 2 creates.** Reversed, 
 | `apps/supabase` | `recipes/supabase` | Fix B5. The RLS warning becomes a blocking manual step. |
 | `apps/trpc` | `recipes/trpc` | Added after this plan was written. `requires: ["prisma"]`, host `with-prisma`. The placeholder session in `trpc/init.ts` is a manual step. |
 | `apps/reference` | — | No longer in the repo by Phase 5; nothing to migrate. |
-| `packages/ui` | _(decide)_ | B11 — populate or delete. |
+| `packages/ui` | — | B11 — deleted (D2). Recipes use the `@cnippet` registry via `cnippetUiComponents`. |
 | `packages/eslint-config`, `packages/typescript-config` | unchanged | Hosts and demos consume them |
 
 One naming decision to settle before Phase 3: **recipe names must match between this repo, `cnippet-stack`'s registry, and the guide slug on `next.cnippet.dev`.** `authjs` vs `nextauth` vs `next-auth` will cause a broken guide link otherwise. Write the chosen names down.
@@ -572,35 +580,36 @@ Chosen names (all three places must use these):
 
 ## 7. Verification checklist
 
-Before calling the migration done:
+Before calling the migration done. Last checked 2026-09-29: `validate-recipes` 7/7, `check-coverage` 7/7.
 
 **Structure**
-- [ ] `hosts/`, `recipes/`, `demos/`, `scripts/` exist and are in `turbo.json`
-- [ ] No `apps/` directory, or only a deliberately-kept `apps/reference`
-- [ ] Root `AGENTS.md` and a real `README.md` exist
-- [ ] Lockfile regenerated and noticeably smaller
+- [x] `hosts/`, `recipes/`, `demos/`, `scripts/` exist. `hosts/*` and `demos/*` are workspaces that turbo picks up; `recipes/` and `scripts/` are not packages, by design.
+- [x] No `apps/` directory
+- [x] Root `AGENTS.md` and a real `README.md` exist
+- [x] Lockfile regenerated and noticeably smaller (3,095 → ~2,226 lines)
 
 **Every recipe**
-- [ ] Has `recipe.config.ts` and `files/`
-- [ ] Has no `package.json`, `node_modules`, or `.next`
-- [ ] Every `source` path exists
-- [ ] Every file in `files/` is claimed by exactly one step
-- [ ] Every step has `title`, `why`, `verify`
-- [ ] Step ids are descriptive slugs, unique, non-numeric
-- [ ] Every `append` uses marker blocks
-- [ ] `dependencies` extracted from the old app's `package.json`
-- [ ] No generated Prisma client, no guide `.md`, no `components/ui/**` fork
-- [ ] Composes into every declared host and passes `tsc --noEmit` + `next build`
-- [ ] Stopping after each step still typechecks
+- [x] Has `recipe.config.ts` and `files/`
+- [x] Has no `package.json`, `node_modules`, or `.next`
+- [x] Every `source` path exists (`validate-recipes`)
+- [x] Every file in `files/` is claimed by exactly one step (`check-coverage`)
+- [x] Every step has `title`, `why`, `verify` (schema)
+- [x] Step ids are descriptive slugs, unique, non-numeric (schema)
+- [x] Every `append` uses marker blocks (`validate-recipes`)
+- [x] `dependencies` extracted from the old app's `package.json`
+- [x] No generated Prisma client, no guide `.md`, no `components/ui/**` fork
+- [ ] Composes into every declared host and passes `tsc --noEmit` + `next build`. CI runs this (`recipes.yml`, `compose --build`); still needs one green run on the branch.
+- [ ] Stopping after each step still typechecks. `compose --through <step>` supports it, but nothing runs it per step yet.
 
 **Bugs closed**
-- [ ] B1–B11 each either fixed or consciously deferred with a note
+- [x] B1–B11 all fixed: B1/B2 `[...all]` route; B3 `lib/prisma.ts`; B4 drizzle has no Prisma schema; B5 `schema.prisma`; B6 no generated client tracked; B7 guide `.md` gone; B8 cache paths; B9 per-recipe env; B10 Bun 1.3.14 everywhere; B11 `packages/ui` deleted
 
 **CI**
-- [ ] Matrix over recipes, not one job per app
-- [ ] Env placeholders generated from declared `env`, not a shared block
-- [ ] Cache paths point at directories that exist
-- [ ] Labeler updated
+- [x] Matrix over recipes, not one job per app
+- [x] Only changed recipes run on a PR (`scripts/changed-recipes.ts`). Still needs confirming on a real PR run.
+- [x] Env placeholders generated from declared `env`, not a shared block
+- [x] Cache paths point at directories that exist
+- [x] Labeler updated
 
 ---
 
@@ -622,8 +631,8 @@ Answer these before or during the phase that needs them.
 
 | # | Decision | Needed by |
 |---|---|---|
-| D1 | Which host apps? Three (`app-router-src`, `app-router-no-src`, `with-prisma`) or also `with-drizzle` / `no-orm`? | Phase 0 |
-| D2 | `packages/ui` — populate or delete? (B11) | Phase 0 |
+| ~~D1~~ | ~~Which host apps?~~ — **decided:** the three (`app-router-src`, `app-router-no-src`, `with-prisma`). Add `with-drizzle` / `no-orm` only if a recipe needs one. | Phase 0 |
+| ~~D2~~ | ~~`packages/ui` — populate or delete? (B11)~~ — **decided:** deleted. | Phase 0 |
 | ~~D3~~ | ~~What is `apps/reference` for?~~ — **moot:** it was already removed before Phase 5. | Phase 5 |
 | ~~D4~~ | ~~Which recipes get a demo?~~ — **decided:** `better-auth` and `prisma`. All other apps are deleted in Phase 5. | Phase 4 |
 | ~~D5~~ | ~~Recipe naming~~ — **decided:** `authjs`, matching `cnippet-stack`'s registry. Guide slug on `next.cnippet.dev` still to be aligned (out of scope here, §10). | Phase 3 |

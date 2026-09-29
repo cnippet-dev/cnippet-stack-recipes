@@ -1,6 +1,8 @@
 # Validates every recipes/*/recipe.config.ts and checks every file under
-# files/ is claimed by a step, then composes each migrated
-# recipe into the hosts it declares and runs `next build` + `tsc --noEmit`.
+# files/ is claimed by a step, then composes the affected recipes into the
+# hosts they declare and runs `next build` + `tsc --noEmit`.
+# On a PR, only recipes touched by the diff are composed (see
+# scripts/changed-recipes.ts); a push to main composes all of them.
 # Env values come from each recipe's declared envVars (placeholders written by
 # scripts/compose.ts), not from a shared env block.
 name: Recipes
@@ -17,8 +19,13 @@ jobs:
   validate:
     name: Validate recipes
     runs-on: ubuntu-latest
+    outputs:
+      recipes: ${{ steps.changed.outputs.recipes }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          # The PR base commit must be present to diff against it.
+          fetch-depth: 0
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -33,15 +40,29 @@ jobs:
       - name: Check every file is claimed by a step
         run: bun run check-coverage
 
+      - name: Pick recipes to compose
+        id: changed
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if [ "$EVENT_NAME" = "pull_request" ] && [ -n "$BASE_SHA" ]; then
+            recipes=$(git diff --name-only "$BASE_SHA" HEAD | bun run --silent changed-recipes)
+          else
+            recipes=$(bun run --silent changed-recipes --all)
+          fi
+          echo "recipes=$recipes" >> "$GITHUB_OUTPUT"
+          echo "Composing: \`$recipes\`" >> "$GITHUB_STEP_SUMMARY"
+
   compose:
     name: Compose ${{ matrix.recipe }}
     needs: validate
+    if: needs.validate.outputs.recipes != '[]'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        # Migrated recipes. Phase 6 derives this from changed paths.
-        recipe: [prisma, better-auth, authjs, rest-api-patterns, drizzle, supabase, trpc]
+        recipe: ${{ fromJSON(needs.validate.outputs.recipes) }}
     steps:
       - uses: actions/checkout@v4
 

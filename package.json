@@ -20,6 +20,7 @@
   "private": true,
   "scripts": {
     "build": "turbo run build",
+    "changed-recipes": "bun scripts/changed-recipes.ts",
     "check-coverage": "bun scripts/check-coverage.ts",
     "check-types": "turbo run check-types",
     "compose": "bun scripts/compose.ts",
