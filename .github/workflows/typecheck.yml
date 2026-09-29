@@ -1,4 +1,4 @@
-# Runs `tsc` (via turbo) across all workspaces, including apps/reference.
+# Runs `tsc` (via turbo) across all workspaces (hosts/*, demos/*, packages/*).
 name: Typecheck
 
 on:

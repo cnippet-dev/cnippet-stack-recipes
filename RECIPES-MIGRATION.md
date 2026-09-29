@@ -438,6 +438,8 @@ Only once Phases 1–4 are all green.
 
 **Acceptance:** repo builds from clean clone. Lockfile regenerated. No references to `apps/*` remain in `turbo.json`, `.github/`, or docs.
 
+Done notes: `apps/authjs`, `drizzle`, `rest`, `supabase` and `trpc` deleted; `apps/reference` was already gone. Lockfile 3,095 → 2,224 lines. To clear `apps/*` from `.github/`, part of Phase 6 landed here: B8 (build cache now `hosts/*` + `demos/*`, comments fixed), the labeler update, and the env blocks in `build.yml` / `turbo.json` trimmed to what hosts and demos read. B9's per-recipe env generation was already in `recipes.yml`.
+
 ### Phase 6 — CI rebuild
 
 Fix B8 and B9.
@@ -548,7 +550,7 @@ Note the ordering constraint: **step 3 imports what step 2 creates.** Reversed, 
 | `apps/drizzle` | `recipes/drizzle` | Fix B4. Guide #12, tier **paid**. |
 | `apps/supabase` | `recipes/supabase` | Fix B5. The RLS warning becomes a blocking manual step. |
 | `apps/trpc` | `recipes/trpc` | Added after this plan was written. `requires: ["prisma"]`, host `with-prisma`. The placeholder session in `trpc/init.ts` is a manual step. |
-| `apps/reference` | _(decide)_ | Clarify its purpose first. |
+| `apps/reference` | — | No longer in the repo by Phase 5; nothing to migrate. |
 | `packages/ui` | _(decide)_ | B11 — populate or delete. |
 | `packages/eslint-config`, `packages/typescript-config` | unchanged | Hosts and demos consume them |
 
@@ -622,7 +624,7 @@ Answer these before or during the phase that needs them.
 |---|---|---|
 | D1 | Which host apps? Three (`app-router-src`, `app-router-no-src`, `with-prisma`) or also `with-drizzle` / `no-orm`? | Phase 0 |
 | D2 | `packages/ui` — populate or delete? (B11) | Phase 0 |
-| D3 | What is `apps/reference` for? Keep, move to `demos/`, or delete? | Phase 5 |
+| ~~D3~~ | ~~What is `apps/reference` for?~~ — **moot:** it was already removed before Phase 5. | Phase 5 |
 | ~~D4~~ | ~~Which recipes get a demo?~~ — **decided:** `better-auth` and `prisma`. All other apps are deleted in Phase 5. | Phase 4 |
 | ~~D5~~ | ~~Recipe naming~~ — **decided:** `authjs`, matching `cnippet-stack`'s registry. Guide slug on `next.cnippet.dev` still to be aligned (out of scope here, §10). | Phase 3 |
 | D6 | How does `cnippet-stack` read this repo? Submodule, pinned CI checkout, or published package? | Phase 7 |

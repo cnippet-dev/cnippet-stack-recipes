@@ -1,5 +1,5 @@
-# Runs Biome format/lint checks across the whole repo (apps/reference,
-# packages/*, and root config files).
+# Runs Biome format/lint checks across the whole repo (hosts, demos, recipes,
+# scripts, packages/* and root config files).
 name: Format
 
 on:

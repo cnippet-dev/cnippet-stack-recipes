@@ -25,11 +25,7 @@
       "!**/*.log",
       "!**/.turbo",
       "!**/.next",
-      "!**/apps/**/*/.next",
-      "!**/apps/**/*/.source",
-      "!**/apps/ui/public/",
-      "!**/apps/authjs/app/generated",
-      "!**/apps/authjs/app/generated/prisma",
+      "!**/.compose",
       "!**/demos/*/app/generated/prisma",
       "!**/hosts/*/app/generated/prisma"
     ]

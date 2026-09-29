@@ -1,4 +1,4 @@
-# Runs ESLint (via turbo) across all workspaces, including apps/reference.
+# Runs ESLint (via turbo) across all workspaces (hosts/*, demos/*, packages/*).
 name: Lint
 
 on:

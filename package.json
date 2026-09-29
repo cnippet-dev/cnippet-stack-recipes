@@ -30,7 +30,6 @@
     "validate-recipes": "bun scripts/validate-recipes.ts"
   },
   "workspaces": [
-    "apps/*",
     "demos/*",
     "hosts/*",
     "packages/*"

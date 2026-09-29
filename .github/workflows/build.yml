@@ -1,5 +1,5 @@
-# Builds all workspaces via `turbo run build`. The Next.js cache path below
-# targets apps/reference, the sole Next.js app in this monorepo.
+# Builds all workspaces (hosts/* and demos/*) via `turbo run build`. Recipes are
+# built separately by recipes.yml. Env values below are placeholders for the demos.
 name: Build
 
 on:
@@ -10,7 +10,6 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   NEXT_TELEMETRY_DISABLED: 1
   DATABASE_URL: postgresql://user:password@localhost:5432/db
-  AUTH_SECRET: build-only-placeholder-secret
   BETTER_AUTH_SECRET: build-only-placeholder-secret
   BETTER_AUTH_URL: http://localhost:3000
   GITHUB_CLIENT_ID: build-only-placeholder
@@ -20,12 +19,6 @@ env:
   NEXT_PUBLIC_APP_URL: http://localhost:3000
   NEXT_PUBLIC_BETTER_AUTH_URL: http://localhost:3000
   API_URL: http://localhost:3000
-  UPSTASH_REDIS_REST_URL: https://your.upstash.io
-  UPSTASH_REDIS_REST_TOKEN: your-token-asdfas0jpiuhewqnaskjdbxzmcoaidhf
-  NEXT_PUBLIC_SUPABASE_URL: https://url.supabase.co
-  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_key
-  SUPABASE_SECRET_KEY: sb_secret_key
-  SUPABASE_ACCESS_TOKEN: sbp_key
 
 jobs:
   build:
@@ -45,12 +38,14 @@ jobs:
           key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
           restore-keys: ${{ runner.os }}-bun-
 
-      # apps/reference is the only Next.js app in this monorepo
+      # One Next.js build cache per host and demo app
       - name: Cache Next.js build cache
         uses: actions/cache@v4
         with:
-          path: apps/reference/.next/cache
-          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/bun.lock') }}-${{ hashFiles('apps/reference/**/*.ts', 'apps/reference/**/*.tsx', 'apps/reference/**/*.mts') }}
+          path: |
+            hosts/*/.next/cache
+            demos/*/.next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/bun.lock') }}-${{ hashFiles('hosts/**/*.ts', 'hosts/**/*.tsx', 'demos/**/*.ts', 'demos/**/*.tsx') }}
           restore-keys: ${{ runner.os }}-nextjs-${{ hashFiles('**/bun.lock') }}-
 
       - name: Install dependencies

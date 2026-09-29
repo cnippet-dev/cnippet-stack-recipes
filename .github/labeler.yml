@@ -1,10 +1,21 @@
 # GitHub PR Labeler configuration
 # Docs: https://github.com/actions/labeler
 
-# apps/reference: Next.js app showcasing component/recipe reference docs
-"app:reference":
+"recipes":
   - changed-files:
-      - any-glob-to-any-file: "apps/reference/**"
+      - any-glob-to-any-file: "recipes/**"
+
+"hosts":
+  - changed-files:
+      - any-glob-to-any-file: "hosts/**"
+
+"demos":
+  - changed-files:
+      - any-glob-to-any-file: "demos/**"
+
+"scripts":
+  - changed-files:
+      - any-glob-to-any-file: "scripts/**"
 
 "package:eslint-config":
   - changed-files:
