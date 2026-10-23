@@ -13,9 +13,9 @@ import {
   AccordionItem,
   AccordionPanel,
   AccordionTrigger,
-} from "../ui/accordion";
-import { Badge } from "../ui/badge";
-import { Button } from "../ui/button";
+} from "@/components/ui/accordion";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -23,16 +23,16 @@ import {
   CardHeader,
   CardPanel,
   CardTitle,
-} from "../ui/card";
+} from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "../ui/dialog";
-import { Spinner } from "../ui/spinner";
-import { toastManager } from "../ui/toast";
+} from "@/components/ui/dialog";
+import { Spinner } from "@/components/ui/spinner";
+import { toastManager } from "@/components/ui/toast";
 
 // TODO Fix accordion shift
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { SignOutButton } from "../auth/signout-button";
+import { SignOutButton } from "@/components/auth/signout-button";
 
 export default function Footer() {
   const { data: session } = useSession();

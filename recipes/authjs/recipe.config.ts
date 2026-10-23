@@ -1,4 +1,4 @@
-import { defineRecipe } from "../../scripts/define-recipe";
+import type { RecipeManifestInput } from "@cnippet/recipe-kit";
 
 // `app/...` sources land in the app dir, everything else under srcDir.
 const create = (source: string) => ({
@@ -9,7 +9,7 @@ const create = (source: string) => ({
     : `{{srcDir}}${source}`,
 });
 
-export default defineRecipe({
+export default {
   category: "auth",
   cnippetUiComponents: [
     "avatar",
@@ -121,7 +121,6 @@ export default defineRecipe({
     {
       files: [
         create("lib/env.ts"),
-        create("lib/prisma.ts"),
         create("lib/validations/auth.schema.ts"),
         create("lib/errors/auth-errors.ts"),
         create("lib/auth/authorize-credentials.ts"),
@@ -203,5 +202,5 @@ export default defineRecipe({
   },
   tier: "free",
   title: "Auth.js (NextAuth v5)",
-  version: "0.1.0",
-});
+  version: "0.2.0",
+} satisfies RecipeManifestInput;

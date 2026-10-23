@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
-import { InvalidCredentialsError } from "../errors/auth-errors";
-import prisma from "../prisma";
-import { loginSchema } from "../validations/auth.schema";
+import { InvalidCredentialsError } from "@/lib/errors/auth-errors";
+import prisma from "@/lib/db/prisma";
+import { loginSchema } from "@/lib/validations/auth.schema";
 
 export async function authorizeCredentials(credentials: unknown) {
   const parsed = loginSchema.safeParse(credentials);

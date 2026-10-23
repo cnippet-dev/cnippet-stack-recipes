@@ -4,10 +4,10 @@ import bcrypt from "bcryptjs";
 import { headers } from "next/headers";
 import { signIn } from "@/auth";
 import { registerSchema } from "@/lib/validations/auth.schema";
-import { Prisma } from "../../app/generated/prisma/client";
-import { resolveAuthError } from "../errors/handle-auth-errors";
-import prisma from "../prisma";
-import { rateLimit } from "../rate-limit";
+import { Prisma } from "@/app/generated/prisma/client";
+import { resolveAuthError } from "@/lib/errors/handle-auth-errors";
+import prisma from "@/lib/db/prisma";
+import { rateLimit } from "@/lib/rate-limit";
 
 export type RegisterFormState = {
   success: boolean;

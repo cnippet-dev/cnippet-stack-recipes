@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { requireUser } from "@/lib/dal";
-import prisma from "@/lib/prisma";
+import prisma from "@/lib/db/prisma";
 
 export default async function Profile() {
   const authUser = await requireUser();

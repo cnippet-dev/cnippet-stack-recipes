@@ -3,20 +3,20 @@
 import { CircleAlertIcon, PlusIcon, XIcon } from "lucide-react";
 import { type KeyboardEvent, useState } from "react";
 import { createPostAction } from "@/lib/actions/dal";
-import { Button } from "../ui/button";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardFooter,
   CardHeader,
   CardTitle,
-} from "../ui/card";
-import { Field, FieldLabel } from "../ui/field";
-import { Form } from "../ui/form";
-import { Input } from "../ui/input";
-import { Spinner } from "../ui/spinner";
-import { Textarea } from "../ui/textarea";
-import { toastManager } from "../ui/toast";
+} from "@/components/ui/card";
+import { Field, FieldLabel } from "@/components/ui/field";
+import { Form } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Spinner } from "@/components/ui/spinner";
+import { Textarea } from "@/components/ui/textarea";
+import { toastManager } from "@/components/ui/toast";
 
 export function Create() {
   const [loading, setLoading] = useState<boolean>(false);

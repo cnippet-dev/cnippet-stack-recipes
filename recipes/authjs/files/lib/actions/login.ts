@@ -2,8 +2,8 @@
 
 import { headers } from "next/headers";
 import { signIn } from "@/auth";
-import { resolveAuthError } from "../errors/handle-auth-errors";
-import { rateLimit } from "../rate-limit";
+import { resolveAuthError } from "@/lib/errors/handle-auth-errors";
+import { rateLimit } from "@/lib/rate-limit";
 
 export type LoginFormState = { message: string; success?: boolean };
 

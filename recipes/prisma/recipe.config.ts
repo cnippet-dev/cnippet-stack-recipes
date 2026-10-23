@@ -1,6 +1,6 @@
-import { defineRecipe } from "../../scripts/define-recipe";
+import type { RecipeManifestInput } from "@cnippet/recipe-kit";
 
-export default defineRecipe({
+export default {
   category: "database",
   cnippetUiComponents: [
     "accordion",
@@ -230,5 +230,5 @@ export default defineRecipe({
   tier: "free",
   title: "Prisma ORM",
   trustedBuildScripts: ["prisma", "@prisma/client", "@prisma/engines"],
-  version: "0.1.0",
-});
+  version: "0.1.1",
+} satisfies RecipeManifestInput;
