@@ -9,7 +9,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
-import { RecipeConfig } from "./types";
+import { RecipeManifest } from "@cnippet/recipe-kit";
 
 const ROOT = resolve(import.meta.dir, "..");
 const RECIPES_DIR = join(ROOT, "recipes");
@@ -47,7 +47,7 @@ async function checkRecipe(name: string): Promise<string[]> {
   const mod = await import(
     pathToFileURL(join(recipeDir, "recipe.config.ts")).href
   );
-  const parsed = RecipeConfig.safeParse(mod.default);
+  const parsed = RecipeManifest.safeParse(mod.default);
   if (!parsed.success)
     return ["invalid recipe.config.ts — run validate-recipes"];
 

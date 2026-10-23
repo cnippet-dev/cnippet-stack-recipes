@@ -11,7 +11,7 @@
 import { existsSync, readdirSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
-import { RecipeConfig } from "./types";
+import { RecipeManifest } from "@cnippet/recipe-kit";
 
 const ROOT = resolve(import.meta.dir, "..");
 const RECIPES_DIR = join(ROOT, "recipes");
@@ -33,11 +33,11 @@ const listRecipes = (): string[] =>
     .sort();
 
 async function loadConfigs(names: string[]) {
-  const configs = new Map<string, RecipeConfig>();
+  const configs = new Map<string, RecipeManifest>();
   for (const name of names) {
     const path = join(RECIPES_DIR, name, "recipe.config.ts");
     const mod = await import(pathToFileURL(path).href);
-    configs.set(name, RecipeConfig.parse(mod.default));
+    configs.set(name, RecipeManifest.parse(mod.default));
   }
   return configs;
 }

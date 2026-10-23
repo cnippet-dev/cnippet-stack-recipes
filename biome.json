@@ -91,6 +91,19 @@
       }
     }
   },
+  "overrides": [
+    {
+      "includes": ["recipes/*/files/**"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noDuplicateObjectKeys": "off",
+            "noUndeclaredEnvVars": "off"
+          }
+        }
+      }
+    }
+  ],
   "vcs": {
     "clientKind": "git",
     "defaultBranch": "main",

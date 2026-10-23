@@ -1,5 +1,5 @@
 // Verbatim copy of cnippet-stack/packages/cli/src/installer/strategies/ast-inject/wrap-jsx.ts — keep identical to upstream.
-// TODO: import from cnippet-stack once this repo depends on it (RECIPES-MIGRATION.md §3).
+// TODO: import from cnippet-stack once this repo depends on it (it already shares @cnippet/recipe-kit).
 
 import type { Expression, FunctionDeclaration, SourceFile } from "ts-morph";
 import { Node, SyntaxKind } from "ts-morph";

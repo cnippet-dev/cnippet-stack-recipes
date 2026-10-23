@@ -1,8 +1,12 @@
-// Turns a real source file from recipes/<name>/files/ into the text a given
-// project receives: `#if` directives resolved, append markers honoured, and
-// `{{srcDir}}`/`{{appDir}}` placeholders in targets resolved.
-// (RECIPES-MIGRATION.md §3.5–3.7)
-import { evaluateWhen, type WhenScope } from "./when";
+// Turns a recipe's real source files (recipes/<name>/files/) into the text a
+// given project receives: `when` filters applied, `#if` directives resolved,
+// append marker blocks extracted, `{{srcDir}}`/`{{appDir}}` targets resolved.
+// compose (CI) and the cnippet-stack registry (users) both call renderFiles(),
+// so what CI tests is byte-for-byte what users install.
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import type { RecipeFile, RecipeManifest } from "./schema.js";
+import { evaluateWhen, type WhenScope } from "./when.js";
 
 // `// #if expr`, `# #if expr`, `<!-- #if expr -->` — the file's own comment syntax.
 const DIRECTIVE =
@@ -47,7 +51,7 @@ export function renderDirectives(
         block = null;
         break;
       case "each":
-        throw new Error(`${where}: #each is not supported by compose yet`);
+        throw new Error(`${where}: #each is not supported`);
     }
   }
 
@@ -56,9 +60,9 @@ export function renderDirectives(
 }
 
 /**
- * For `append` sources: returns the marker lines plus everything between
- * them. Anything outside the markers is context for the reader and is not
- * appended.
+ * For `append` sources: returns the lines between the `>>> cnippet:<recipe>`
+ * and `<<< cnippet:<recipe>` markers (markers excluded — the installer adds
+ * its own). Anything outside them is context for the reader, not appended.
  */
 export function extractMarkerBlock(
   source: string,
@@ -71,7 +75,7 @@ export function extractMarkerBlock(
   if (start === -1 || end === -1 || end < start) {
     throw new Error(`${file}: missing cnippet:${recipe} marker block`);
   }
-  return lines.slice(start, end + 1).join("\n");
+  return lines.slice(start + 1, end).join("\n");
 }
 
 export function resolveTarget(target: string, srcDir: boolean): string {
@@ -83,4 +87,51 @@ export function resolveTarget(target: string, srcDir: boolean): string {
     throw new Error(`unknown placeholder ${leftover[0]} in target "${target}"`);
   }
   return resolved;
+}
+
+export interface RenderedFile {
+  contents: string;
+  injection?: RecipeFile["injection"];
+  replaces?: boolean;
+  strategy: RecipeFile["strategy"];
+  target: string;
+}
+
+/**
+ * Renders every file of `manifest`'s steps (up to and including step
+ * `through`, if given) that applies to `scope`. `recipeDir` is the folder
+ * holding `recipe.config.ts` and `files/`.
+ */
+export function renderFiles(
+  manifest: RecipeManifest,
+  recipeDir: string,
+  scope: WhenScope,
+  through?: string,
+): RenderedFile[] {
+  const last = through
+    ? manifest.steps.findIndex((step) => step.id === through)
+    : manifest.steps.length - 1;
+  if (last === -1) throw new Error(`${manifest.name}: no step "${through}"`);
+
+  const srcDir = Boolean(scope.detection.srcDir);
+  return manifest.steps
+    .slice(0, last + 1)
+    .flatMap((step) => step.files)
+    .filter((file) => evaluateWhen(file.when, scope))
+    .map((file) => {
+      let contents = readFileSync(
+        join(recipeDir, "files", file.source),
+        "utf8",
+      ).replaceAll("\r\n", "\n");
+      if (file.strategy === "append") {
+        contents = extractMarkerBlock(contents, manifest.name, file.source);
+      }
+      return {
+        contents: renderDirectives(contents, scope, file.source),
+        injection: file.injection,
+        replaces: file.replaces,
+        strategy: file.strategy,
+        target: resolveTarget(file.target, srcDir),
+      };
+    });
 }

@@ -1,6 +1,3 @@
-// Verbatim copy of cnippet-stack/packages/registry/src/when.ts — keep identical to upstream.
-// TODO: import from cnippet-stack once this repo depends on it (RECIPES-MIGRATION.md §3).
-
 /**
  * Hand-rolled evaluator for manifest `when`/`condition` expressions.
  * Deliberately not `eval`/`Function` — the input is untrusted recipe data

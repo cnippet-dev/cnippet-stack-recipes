@@ -3,7 +3,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, posix, relative, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
-import { RecipeConfig, toManifest } from "./types";
+import { RecipeManifest, resolveTarget } from "@cnippet/recipe-kit";
 
 const ROOT = resolve(import.meta.dir, "..");
 const RECIPES_DIR = join(ROOT, "recipes");
@@ -26,6 +26,9 @@ const listFiles = (dir: string): string[] =>
   });
 
 const UI_IMPORT = /\bfrom\s+["']([^"']+)["']/g;
+// `@/` works with and without src/; `../` breaks when files move between steps or layouts.
+const IMPORT = /(?:\bfrom\s*|\bimport\s*\(\s*|\bimport\s+)["']([^"']+)["']/g;
+const CODE_FILE = /\.(tsx?|jsx?|mjs)$/;
 const UI_PATH = /^components\/ui\/([a-z0-9-]+)$/;
 
 // Registry components the files import from `components/ui/`, by `@/` alias
@@ -66,7 +69,7 @@ async function validateRecipe(
   }
 
   const mod = await import(pathToFileURL(configPath).href);
-  const parsed = RecipeConfig.safeParse(mod.default);
+  const parsed = RecipeManifest.safeParse(mod.default);
   if (!parsed.success) {
     return [
       ...errors,
@@ -112,6 +115,28 @@ async function validateRecipe(
         );
         continue;
       }
+      if (file.replaces && file.strategy !== "create") {
+        errors.push(`${where}: \`replaces\` only applies to create files`);
+      }
+      if (file.strategy === "create") {
+        for (const host of config.hosts.filter((h) => hosts.has(h))) {
+          const hostDir = join(HOSTS_DIR, host);
+          const target = resolveTarget(
+            file.target,
+            existsSync(join(hostDir, "src", "app")),
+          );
+          const exists = existsSync(join(hostDir, target));
+          if (exists && !file.replaces) {
+            errors.push(
+              `${where}: ${target} already exists in host "${host}" — set \`replaces: true\``,
+            );
+          } else if (!exists && file.replaces) {
+            errors.push(
+              `${where}: "${file.source}" is marked \`replaces\` but host "${host}" has no ${target}`,
+            );
+          }
+        }
+      }
       if (file.strategy === "append") {
         const contents = readFileSync(sourcePath, "utf8");
         for (const marker of [`>>> cnippet:${name}`, `<<< cnippet:${name}`]) {
@@ -131,6 +156,14 @@ async function validateRecipe(
         "files/components/ui/ must not exist; declare registry components in `cnippetUiComponents`",
       );
     }
+    for (const path of listFiles(filesDir).filter((p) => CODE_FILE.test(p))) {
+      const file = relative(filesDir, path).split(/[\\/]/).join("/");
+      for (const [, specifier] of readFileSync(path, "utf8").matchAll(IMPORT)) {
+        if (specifier.startsWith("../")) {
+          errors.push(`${file}: relative import "${specifier}" — use @/`);
+        }
+      }
+    }
     const declared = new Set(config.cnippetUiComponents ?? []);
     const used = importedUiComponents(filesDir);
     for (const component of used) {
@@ -147,12 +180,6 @@ async function validateRecipe(
         );
       }
     }
-  }
-
-  try {
-    toManifest(config);
-  } catch (error) {
-    errors.push(`does not flatten to a valid RecipeManifest: ${error}`);
   }
 
   return errors;

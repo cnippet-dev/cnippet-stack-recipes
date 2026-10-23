@@ -18,14 +18,16 @@ import {
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
-import { applyAstInject } from "./lib/ast-inject";
 import {
-  extractMarkerBlock,
-  renderDirectives,
+  evaluateWhen,
+  type Prompt,
+  RecipeManifest,
+  renderFiles,
   resolveTarget,
-} from "./lib/render";
-import { evaluateWhen, type WhenScope } from "./lib/when";
-import { type Prompt, RecipeConfig, type Step } from "./types";
+  type Step,
+  type WhenScope,
+} from "@cnippet/recipe-kit";
+import { applyAstInject } from "./lib/ast-inject";
 
 const ROOT = resolve(import.meta.dir, "..");
 
@@ -45,11 +47,11 @@ type PackageJson = {
   trustedDependencies?: string[];
 };
 
-async function loadRecipe(name: string): Promise<RecipeConfig> {
+async function loadRecipe(name: string): Promise<RecipeManifest> {
   const configPath = join(ROOT, "recipes", name, "recipe.config.ts");
   if (!existsSync(configPath)) throw new Error(`no such recipe: ${name}`);
   const mod = await import(pathToFileURL(configPath).href);
-  return RecipeConfig.parse(mod.default);
+  return RecipeManifest.parse(mod.default);
 }
 
 // "All branches on": the maximal config, so CI tests the most code.
@@ -90,7 +92,7 @@ function detect(dest: string) {
   };
 }
 
-type Applied = Map<string, { config: RecipeConfig; steps: Step[] }>;
+type Applied = Map<string, { config: RecipeManifest; steps: Step[] }>;
 
 async function applyRecipe(
   name: string,
@@ -117,52 +119,47 @@ async function applyRecipe(
 
   const answers = maximalAnswers(config.prompts);
   const scope: WhenScope = { answers, detection };
-  const filesDir = join(ROOT, "recipes", name, "files");
+  const recipeDir = join(ROOT, "recipes", name);
+  const files = renderFiles(config, recipeDir, scope, through);
+  const steps = through
+    ? config.steps.slice(0, config.steps.findIndex((s) => s.id === through) + 1)
+    : config.steps;
 
-  const throughIndex = through
-    ? config.steps.findIndex((s) => s.id === through)
-    : config.steps.length - 1;
-  if (throughIndex === -1) throw new Error(`${name}: no step "${through}"`);
+  for (const file of files) {
+    const { target, contents } = file;
+    const targetPath = join(dest, target);
 
-  const steps = config.steps.slice(0, throughIndex + 1);
-  for (const step of steps) {
-    for (const file of step.files) {
-      if (!evaluateWhen(file.when, scope)) continue;
-
-      const sourcePath = join(filesDir, file.source);
-      let contents = readFileSync(sourcePath, "utf8").replaceAll("\r\n", "\n");
-      if (file.strategy === "append") {
-        contents = extractMarkerBlock(contents, name, file.source);
-      }
-      contents = renderDirectives(contents, scope, file.source);
-
-      const target = resolveTarget(file.target, detection.srcDir);
-      const targetPath = join(dest, target);
-
-      switch (file.strategy) {
-        case "create":
-          if (existsSync(targetPath)) {
-            throw new Error(
-              `${name}/${step.id}: create target ${target} already exists in the host`,
-            );
-          }
-          mkdirSync(dirname(targetPath), { recursive: true });
-          writeFileSync(targetPath, contents);
-          break;
-        case "append":
-          mkdirSync(dirname(targetPath), { recursive: true });
-          appendFileSync(
-            targetPath,
-            existsSync(targetPath) ? `\n${contents}\n` : `${contents}\n`,
+    switch (file.strategy) {
+      case "create":
+        if (existsSync(targetPath) && !file.replaces) {
+          throw new Error(
+            `${name}: create target ${target} already exists in the host — set \`replaces: true\` if the recipe means to overwrite it`,
           );
-          break;
-        case "ast-inject":
-          if (!file.injection) {
-            throw new Error(`${name}/${step.id}: ast-inject without injection`);
-          }
-          applyAstInject(targetPath, file.injection, contents.trim());
-          break;
+        }
+        if (!existsSync(targetPath) && file.replaces) {
+          throw new Error(
+            `${name}: ${target} is marked \`replaces\` but the host has no such file`,
+          );
+        }
+        mkdirSync(dirname(targetPath), { recursive: true });
+        writeFileSync(targetPath, contents);
+        break;
+      case "append": {
+        // Same markers the CLI's append strategy writes.
+        const block = `// >>> cnippet:${name}\n${contents.trimEnd()}\n// <<< cnippet:${name}\n`;
+        mkdirSync(dirname(targetPath), { recursive: true });
+        appendFileSync(
+          targetPath,
+          existsSync(targetPath) ? `\n${block}` : block,
+        );
+        break;
       }
+      case "ast-inject":
+        if (!file.injection) {
+          throw new Error(`${name}: ast-inject ${target} without injection`);
+        }
+        applyAstInject(targetPath, file.injection, contents.trim());
+        break;
     }
   }
 

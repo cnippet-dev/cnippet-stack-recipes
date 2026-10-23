@@ -1,6 +1,7 @@
 {
   "devDependencies": {
     "@biomejs/biome": "2.5.3",
+    "@cnippet/recipe-kit": "workspace:*",
     "prettier": "^3.7.4",
     "ts-morph": "^25.0.1",
     "turbo": "^2.10.4",
@@ -28,8 +29,10 @@
     "format": "biome format --write .",
     "format:all": "biome check --write --unsafe --no-errors-on-unmatched",
     "lint": "turbo run lint --",
+    "pull-recipe": "bun scripts/pull-recipe.ts",
     "validate-recipes": "bun scripts/validate-recipes.ts"
   },
+  "type": "module",
   "workspaces": [
     "demos/*",
     "hosts/*",
