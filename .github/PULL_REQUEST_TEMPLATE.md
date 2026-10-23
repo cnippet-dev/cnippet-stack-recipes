@@ -1,21 +1,26 @@
 ## Summary
-<!-- What does this PR do? -->
+<!-- What does this PR do, and for which recipe? -->
 
-## Type of Change
-- [ ] Bug fix
-- [ ] New component
-- [ ] Documentation update
-- [ ] Refactor
-- [ ] Performance improvement
+## Type of change
+- [ ] New recipe
+- [ ] Recipe fix
+- [ ] New option in an existing recipe
+- [ ] Guide (`guide.mdx`)
+- [ ] Hosts / scripts / tooling
+- [ ] Docs
 
-## Component (if applicable)
-<!-- Which component does this affect? -->
+## Recipe checklist
+<!-- Skip for tooling/docs-only PRs. See CONTRIBUTING.md. -->
+- [ ] Tested for real in a build app (not only typechecked)
+- [ ] Code was changed in the build app and pulled, not edited in `files/` (except `append` fragments)
+- [ ] `version` bumped
+- [ ] No step id renamed or removed (or it's a major version bump)
+- [ ] `bun run validate-recipes <name>` passes
+- [ ] `bun run check-coverage <name>` passes
+- [ ] `bun run compose <name> --build` passes
+- [ ] `bun run compose <name> --through <id> --typecheck` passes for every step
+- [ ] Every prompt's "no" path thought through
+- [ ] No real secrets anywhere
 
-## Screenshots / Demo
-<!-- For UI changes, include a screenshot or Loom link -->
-
-## Checklist
-- [ ] I have tested this in a browser
-- [ ] TypeScript types are correct
-- [ ] No console errors
-- [ ] Documentation updated (if needed)
+## Errors found while testing
+<!-- Exact error messages from "break it on purpose". They go into the guide. -->

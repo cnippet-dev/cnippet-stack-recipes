@@ -6,12 +6,13 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # cnippet-stack-recipes
 
-This repo is the source of truth for recipe code consumed by `cnippet-stack` and `next.cnippet.dev`. It was migrated from one full app per recipe (the old `apps/*`) to shared hosts plus recipe folders — read `RECIPES-MIGRATION.md` before restructuring anything.
+This repo is the source of truth for recipe code consumed by `cnippet-stack` and `next.cnippet.dev`. It was migrated from one full app per recipe (the old `apps/*`) to shared hosts plus recipe folders — read `CONTRIBUTING.md` and `docs/recipe-format.md` before changing anything.
 
 - `hosts/*` — minimal Next.js apps recipes are composed into for CI. Keep them current; add nothing recipe-specific.
 - `recipes/*` — `recipe.config.ts` + `files/`. No `package.json`.
 - `demos/*` — full runnable apps (`prisma`, `better-auth`). Not the source of truth: a recipe change goes in `recipes/`, never only in a demo.
-- `scripts/*` — recipe validation, coverage and composition.
+- `packages/recipe-kit` — the recipe schema, renderer and `when` evaluator, shared with `cnippet-stack`. Schema changes affect the live CLI.
+- `scripts/*` — pull, validation, coverage and composition.
 - Read files on disk, not prose: a recipe's files are whatever its `recipe.config.ts` declares, never a README list.
 - better-auth, Prisma 7, Next 16, Drizzle and Supabase move faster than training data: check current docs before touching their APIs.
 
