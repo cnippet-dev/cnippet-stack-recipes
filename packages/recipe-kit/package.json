@@ -1,0 +1,14 @@
+{
+  "dependencies": {
+    "zod": "^3.24.1"
+  },
+  "description": "The recipe format: schema, `when` evaluator and file renderer. Used by this repo's scripts and by the cnippet-stack registry.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "license": "MIT",
+  "name": "@cnippet/recipe-kit",
+  "private": true,
+  "type": "module",
+  "version": "0.0.0"
+}

@@ -1,5 +1,5 @@
-# Runs format/lint/typecheck/build across the monorepo (currently apps/reference
-# plus the shared packages/*) on every push/PR to main.
+# Runs format/lint/typecheck/build and recipe checks across the monorepo
+# (hosts/*, demos/*, recipes/*, packages/*) on every push/PR to main.
 name: CI
 
 on:
@@ -32,4 +32,10 @@ jobs:
     name: Build
     needs: [format, lint, typecheck]
     uses: ./.github/workflows/build.yml
+    secrets: inherit
+
+  recipes:
+    name: Recipes
+    needs: [format, lint, typecheck]
+    uses: ./.github/workflows/recipes.yml
     secrets: inherit

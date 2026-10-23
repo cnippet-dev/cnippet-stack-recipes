@@ -25,16 +25,9 @@
       "!**/*.log",
       "!**/.turbo",
       "!**/.next",
-      "!**/apps/**/*/.next",
-      "!**/apps/**/*/.source",
-      "!**/apps/ui/public/",
-      "!**/packages/ui/src/components",
-      "!**/packages/ui/src/lib",
-      "!**/packages/ui/src/hooks",
-      "!**/apps/authjs/app/generated",
-      "!**/apps/authjs/app/generated/prisma",
-      "!**/apps/prisma/app/generated/prisma",
-      "!**/apps/better-auth/app/generated/prisma"
+      "!**/.compose",
+      "!**/demos/*/app/generated/prisma",
+      "!**/hosts/*/app/generated/prisma"
     ]
   },
   "formatter": {
@@ -98,6 +91,19 @@
       }
     }
   },
+  "overrides": [
+    {
+      "includes": ["recipes/*/files/**"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noDuplicateObjectKeys": "off",
+            "noUndeclaredEnvVars": "off"
+          }
+        }
+      }
+    }
+  ],
   "vcs": {
     "clientKind": "git",
     "defaultBranch": "main",

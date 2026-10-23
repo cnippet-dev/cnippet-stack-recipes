@@ -1,12 +1,12 @@
-# Runs Biome format/lint checks across the whole repo (apps/reference,
-# packages/*, and root config files).
+# Runs Biome format/lint checks across the whole repo (hosts, demos, recipes,
+# scripts, packages/* and root config files).
 name: Format
 
 on:
   workflow_call: {}
 
 env:
-  BUN_VERSION: 1.3.8
+  BUN_VERSION: 1.3.14
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:

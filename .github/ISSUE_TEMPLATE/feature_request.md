@@ -1,17 +1,28 @@
 ---
-name: Feature request
-about: Suggest a new component or improvement
-title: '[Feature] '
+name: Recipe proposal
+about: Propose a new recipe, or a new option in an existing one
+title: '[Recipe] '
 labels: enhancement
 assignees: ''
 ---
 
-**What component or feature are you requesting?**
+**Recipe name**
+Lowercase, dashes (e.g. `stripe-billing`).
 
-**Describe the problem you're trying to solve**
+**What the user gets**
+One or two sentences.
 
-**Describe the solution you'd like**
+**New recipe or an option in an existing one?**
+See `docs/recipe-format.md` §8.
 
-**Alternatives you've considered**
+**Draft step list**
 
-**Additional context / mockups**
+| # | id | What the user gets | How they see it worked |
+|---|---|---|---|
+| 1 | | | |
+
+**Packages and accounts needed**
+npm packages, and any third-party account / API key.
+
+**Are you building it yourself?**
+yes / no

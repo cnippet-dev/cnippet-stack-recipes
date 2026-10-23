@@ -1,0 +1,14 @@
+// Editor convenience only, not a build config. Files under */files/ are not
+// inside a Next.js app, so `@/*` and bare imports are resolved against one
+// host. CI composition (scripts/compose.ts) is the authoritative check.
+{
+  "compilerOptions": {
+    "noEmit": true,
+    "paths": {
+      "@/*": ["../hosts/app-router-src/src/*"],
+      "*": ["../hosts/with-prisma/node_modules/*"]
+    }
+  },
+  "extends": "../packages/typescript-config/nextjs.json",
+  "include": ["*/files/**/*.ts", "*/files/**/*.tsx"]
+}

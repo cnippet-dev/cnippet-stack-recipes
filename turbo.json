@@ -4,7 +4,6 @@
     "build": {
       "dependsOn": ["^build", "db:generate"],
       "env": [
-        "AUTH_SECRET",
         "DATABASE_URL",
         "BETTER_AUTH_SECRET",
         "BETTER_AUTH_URL",
@@ -14,11 +13,7 @@
         "GOOGLE_CLIENT_SECRET",
         "NEXT_PUBLIC_APP_URL",
         "NEXT_PUBLIC_BETTER_AUTH_URL",
-        "API_URL",
-        "NEXT_PUBLIC_SUPABASE_URL",
-        "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
-        "SUPABASE_SECRET_KEY",
-        "SUPABASE_ACCESS_TOKEN"
+        "API_URL"
       ],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "outputs": [".next/**", "!.next/cache/**", "!.next/dev/**"]

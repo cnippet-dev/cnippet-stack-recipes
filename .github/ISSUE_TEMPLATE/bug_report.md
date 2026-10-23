@@ -1,29 +1,27 @@
 ---
 name: Bug report
-about: Create a report to help us improve
+about: A recipe installed broken code, or a script in this repo fails
 title: '[Bug] '
 labels: bug
 assignees: ''
 ---
 
-**Component**
-Which component is affected? (e.g., Dialog, Combobox)
+**Recipe**
+Which recipe? (e.g. `authjs`, `resend`) — or which script (`compose`, `pull-recipe` …)
 
-**Describe the bug**
-A clear description of what the bug is.
+**What happened**
+The exact error message or wrong behaviour.
 
-**To Reproduce**
-Steps to reproduce the behavior:
-1. ...
+**To reproduce**
+1. The command you ran (e.g. `npx cnippet-stack init resend`, or `bun run compose resend --build`)
+2. ...
 
-**Expected behavior**
-What you expected to happen.
-
-**Screenshots**
-If applicable, add screenshots.
+**Expected**
+What you expected instead.
 
 **Environment**
-- OS: [e.g., macOS 14]
-- Browser: [e.g., Chrome 120]
-- React version: [e.g., 19]
-- Cnippet UI version: [e.g., 0.1.0]
+- OS:
+- Node / Bun version:
+- Next.js version:
+- `src/` folder: yes / no
+- Recipe version (from `recipe.config.ts`, or `cnippet-stack list`):

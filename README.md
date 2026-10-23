@@ -1,159 +1,43 @@
-# Turborepo starter
+# cnippet-stack-recipes
 
-This Turborepo starter is maintained by the Turborepo core team.
+The free recipes behind [stack.cnippet.dev](https://stack.cnippet.dev). A recipe is tested, working Next.js code
+a developer installs into their own app:
 
-## Using this example
-
-Run the following command:
-
-```sh
-npx create-turbo@latest
+```bash
+npx cnippet-stack init resend
 ```
 
-## What's inside?
+Each recipe folder is the single source for three things: the code the CLI installs, the recipe page on
+stack.cnippet.dev, and the beginner guide on next.cnippet.dev.
 
-This Turborepo includes the following packages/apps:
+**Want to add or fix a recipe?** Read [`CONTRIBUTING.md`](./CONTRIBUTING.md).
 
-### Apps and Packages
+## Recipes
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+`authjs`, `prisma`, `resend`.
+The source of truth is the `recipes/` folder, not this list.
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+## Layout
 
-### Utilities
+| Path | What it is |
+|---|---|
+| `recipes/<name>/` | One recipe: `recipe.config.ts` (the manifest) and `files/` (the real code). No `package.json`. |
+| `hosts/*` | Clean Next.js apps CI builds recipes in: `app-router-src`, `app-router-no-src`, `with-prisma`. |
+| `packages/recipe-kit` | The recipe schema, renderer and `when` evaluator. Shared with the `cnippet-stack` CLI, so CI and users get the same output. |
+| `scripts/` | `pull-recipe`, `validate-recipes`, `check-coverage`, `compose`, `changed-recipes`. |
+| `demos/*` | Full runnable apps (`prisma`, `better-auth`) for showing people. Changes there don't ship. |
+| `docs/` | [Recipe format](./docs/recipe-format.md) · [Writing guides](./docs/writing-guides.md) · [Troubleshooting](./docs/troubleshooting.md) · [Brief template](./docs/recipe-brief-template.md) |
 
-This Turborepo has some additional tools already setup for you:
+## Commands
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
+```bash
+bun install
 
-### Build
-
-To build all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo build
+bun run pull-recipe <name> --from <app> [--diff | --write]   # copy tested code into the recipe
+bun run validate-recipes [name ...]                         # manifest correct, files exist
+bun run check-coverage [name ...]                           # every file used by exactly one step
+bun run compose <name> --build                              # build it in every host (what CI runs)
+bun run compose <name> --through <step-id> --typecheck      # a partial install still compiles
 ```
 
-Without global `turbo`, use your package manager:
-
-```sh
-cd my-turborepo
-npx turbo build
-bun dlx turbo build
-bun exec turbo build
-```
-
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo build --filter=docs
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo build --filter=docs
-bun exec turbo build --filter=docs
-bun exec turbo build --filter=docs
-```
-
-### Develop
-
-To develop all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo dev
-```
-
-Without global `turbo`, use your package manager:
-
-```sh
-cd my-turborepo
-npx turbo dev
-bun exec turbo dev
-bun exec turbo dev
-```
-
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo dev --filter=web
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo dev --filter=web
-bun exec turbo dev --filter=web
-bun exec turbo dev --filter=web
-```
-
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo login
-```
-
-Without global `turbo`, use your package manager:
-
-```sh
-cd my-turborepo
-npx turbo login
-bun exec turbo login
-bun exec turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo link
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo link
-bun exec turbo link
-bun exec turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+Composed apps go to `.compose/<recipe>/<host>/` (gitignored, safe to delete).

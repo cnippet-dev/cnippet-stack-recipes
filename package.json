@@ -1,9 +1,12 @@
 {
   "devDependencies": {
     "@biomejs/biome": "2.5.3",
+    "@cnippet/recipe-kit": "workspace:*",
     "prettier": "^3.7.4",
+    "ts-morph": "^25.0.1",
     "turbo": "^2.10.4",
-    "typescript": "5.9.2"
+    "typescript": "5.9.2",
+    "zod": "^3.24.1"
   },
   "devEngines": {
     "packageManager": {
@@ -18,14 +21,21 @@
   "private": true,
   "scripts": {
     "build": "turbo run build",
+    "changed-recipes": "bun scripts/changed-recipes.ts",
+    "check-coverage": "bun scripts/check-coverage.ts",
     "check-types": "turbo run check-types",
+    "compose": "bun scripts/compose.ts",
     "dev": "turbo run dev",
     "format": "biome format --write .",
     "format:all": "biome check --write --unsafe --no-errors-on-unmatched",
-    "lint": "turbo run lint --"
+    "lint": "turbo run lint --",
+    "pull-recipe": "bun scripts/pull-recipe.ts",
+    "validate-recipes": "bun scripts/validate-recipes.ts"
   },
+  "type": "module",
   "workspaces": [
-    "apps/*",
+    "demos/*",
+    "hosts/*",
     "packages/*"
   ]
 }
