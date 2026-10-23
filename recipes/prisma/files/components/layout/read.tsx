@@ -7,7 +7,6 @@ import {
   ListIcon,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { fetchPostsAction } from "@/lib/actions/dal";
 import {
   Accordion,
   AccordionItem,
@@ -26,6 +25,7 @@ import {
 } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { toastManager } from "@/components/ui/toast";
+import { fetchPostsAction } from "@/lib/actions/dal";
 
 type TagType = {
   id: string;

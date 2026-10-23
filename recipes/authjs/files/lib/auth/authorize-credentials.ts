@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
-import { InvalidCredentialsError } from "@/lib/errors/auth-errors";
 import prisma from "@/lib/db/prisma";
+import { InvalidCredentialsError } from "@/lib/errors/auth-errors";
 import { loginSchema } from "@/lib/validations/auth.schema";
 
 export async function authorizeCredentials(credentials: unknown) {

@@ -2,7 +2,6 @@
 
 import { CircleAlertIcon, PlusIcon, XIcon } from "lucide-react";
 import { type KeyboardEvent, useState } from "react";
-import { createPostAction } from "@/lib/actions/dal";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -17,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { toastManager } from "@/components/ui/toast";
+import { createPostAction } from "@/lib/actions/dal";
 
 export function Create() {
   const [loading, setLoading] = useState<boolean>(false);

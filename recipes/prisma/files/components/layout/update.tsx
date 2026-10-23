@@ -2,7 +2,6 @@
 
 import { CircleAlertIcon, DownloadIcon, PenBox, PenIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { fetchPostsAction, updatePostsAction } from "@/lib/actions/dal";
 import {
   Accordion,
   AccordionItem,
@@ -31,6 +30,7 @@ import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { toastManager } from "@/components/ui/toast";
+import { fetchPostsAction, updatePostsAction } from "@/lib/actions/dal";
 
 type TagType = {
   id: string;

@@ -7,7 +7,6 @@ import {
   Trash2Icon,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { deletePostAction, fetchPostsAction } from "@/lib/actions/dal";
 import {
   Accordion,
   AccordionItem,
@@ -33,6 +32,7 @@ import {
 } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/spinner";
 import { toastManager } from "@/components/ui/toast";
+import { deletePostAction, fetchPostsAction } from "@/lib/actions/dal";
 
 // TODO Fix accordion shift
 
