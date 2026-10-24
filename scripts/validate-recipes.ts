@@ -52,6 +52,38 @@ function importedUiComponents(filesDir: string): Set<string> {
   return used;
 }
 
+async function loadConfig(name: string): Promise<RecipeManifest | undefined> {
+  const configPath = join(RECIPES_DIR, name, "recipe.config.ts");
+  if (!existsSync(configPath)) return undefined;
+  const mod = await import(pathToFileURL(configPath).href);
+  const parsed = RecipeManifest.safeParse(mod.default);
+  return parsed.success ? parsed.data : undefined;
+}
+
+// `create` targets of every recipe this one requires, directly or not. Two
+// recipes creating the same file means the second install silently skips it.
+async function requiredCreateTargets(
+  config: RecipeManifest,
+): Promise<Map<string, string>> {
+  const owners = new Map<string, string>();
+  const seen = new Set<string>([config.name]);
+  const queue = [...config.requires];
+  while (queue.length > 0) {
+    const name = queue.shift() as string;
+    if (seen.has(name)) continue;
+    seen.add(name);
+    const required = await loadConfig(name);
+    if (!required) continue;
+    queue.push(...required.requires);
+    for (const step of required.steps) {
+      for (const file of step.files) {
+        if (file.strategy === "create") owners.set(file.target, name);
+      }
+    }
+  }
+  return owners;
+}
+
 async function validateRecipe(
   name: string,
   allRecipes: Set<string>,
@@ -97,6 +129,7 @@ async function validateRecipe(
     );
   }
 
+  const requiredTargets = await requiredCreateTargets(config);
   const seenIds = new Set<string>();
   for (const step of config.steps) {
     const where = `step "${step.id}"`;
@@ -117,6 +150,12 @@ async function validateRecipe(
       }
       if (file.replaces && file.strategy !== "create") {
         errors.push(`${where}: \`replaces\` only applies to create files`);
+      }
+      const owner = requiredTargets.get(file.target);
+      if (file.strategy === "create" && owner) {
+        errors.push(
+          `${where}: ${file.target} is also created by required recipe "${owner}"`,
+        );
       }
       if (file.strategy === "create") {
         for (const host of config.hosts.filter((h) => hosts.has(h))) {
