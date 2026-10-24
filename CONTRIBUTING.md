@@ -34,10 +34,10 @@ You only ever work in **this repo**. You never touch the CLI or the websites.
 
 ```
  ① PLAN      write the step list (ids + one line each)            5–10 min
- ② BUILD     make it work for real in your build app              most of the time
- ③ PULL      copy the code into recipes/<name>/files/             1 command
- ④ DESCRIBE  write recipe.config.ts                               the manual part
- ⑤ CHECK     validate + coverage + compose                        3 commands
+ ② BUILD     bun run recipe new <name>, then make it work for real  most of the time
+ ③ PULL      bun run recipe pull <name> --from <app> --write       1 command
+ ④ DESCRIBE  fill in the TODOs in recipe.config.ts                the manual part
+ ⑤ CHECK     bun run recipe check <name>                          1 command
  ⑥ PR        open a pull request; CI runs ⑤ again                 done
 ```
 
@@ -83,11 +83,19 @@ Rules:
 
 ### ② Build it for real
 
-Use any normal Next.js app. The easiest way is to copy a host, so the Cnippet UI setup is already done:
+Start the recipe and its build app in one command:
 
 ```bash
-cp -r hosts/app-router-no-src ~/build/<name>     # or hosts/with-prisma if you need a database
-cd ~/build/<name> && bun install
+bun run recipe new <name>                         # build app in ../build/<name>
+bun run recipe new <name> --host with-prisma      # if you need a database
+bun run recipe new <name> --app ~/build/<name>    # build app somewhere else
+```
+
+It creates `recipes/<name>/recipe.config.ts` (full of TODOs) and an empty `files/`, and copies a host into
+the build app with its packages installed, so the Cnippet UI setup is already done. It refuses if the recipe
+or the build app folder already exists. Then, in the build app:
+
+```bash
 bun add <the packages your recipe needs>
 ```
 
@@ -116,39 +124,54 @@ Code rules while you write:
 
 Run from the root of this repo.
 
-**First time (no manifest yet):** tell the script which files belong to the recipe.
+**First time (no steps list files yet):** tell the script which files belong to the recipe.
 
 ```bash
 # dry run: shows what it would copy, writes nothing
-bun run pull-recipe <name> --from ~/build/<name> lib/email lib/actions/email.ts components/email-form.tsx
+bun run recipe pull <name> --from ../build/<name> lib/email lib/actions/email.ts components/email-form.tsx
 
 # same command + --write: copies for real
-bun run pull-recipe <name> --from ~/build/<name> lib/email lib/actions/email.ts components/email-form.tsx --write
+bun run recipe pull <name> --from ../build/<name> lib/email lib/actions/email.ts components/email-form.tsx --write
 ```
 
-**Every time after (manifest exists):** the file list comes from the manifest.
+**Every time after (steps list their files):** the file list comes from the manifest.
 
 ```bash
-bun run pull-recipe <name> --from ~/build/<name> --diff     # show changes
-bun run pull-recipe <name> --from ~/build/<name> --write    # copy them
+bun run recipe pull <name> --from ../build/<name> --diff     # show changes
+bun run recipe pull <name> --from ../build/<name> --write    # copy them
 ```
 
-The dry run prints hints. Copy them into the manifest:
+(`recipe pull` is `pull-recipe` under a shorter name; both work.)
 
-| Hint | Put it in |
+`--write` also fills in the boring half of `recipe.config.ts` for you. It only **adds**, never removes or
+rewrites what you wrote:
+
+| It adds | From |
 |---|---|
-| `mark these replaces: true` | that file's entry (e.g. `app/page.tsx`) |
-| `cnippetUiComponents: [...]` | `cnippetUiComponents` |
-| `dependencies needed: [...]` | `dependencies`, with the **versions from your build app's `package.json`** |
+| `dependencies` / `devDependencies` | packages the files import, with the **versions from your build app's `package.json`** |
+| `cnippetUiComponents` | `components/ui/*` imports |
+| `envVars` (name only) | `process.env.X` in the files. The description is a TODO for you. |
+| `replaces: true` | host files (e.g. `app/page.tsx`) that use the recipe's code, once they're in a step |
+
+The dry run prints the same list without writing. Things it can't do, it prints as hints:
+
+| Hint | What to do |
+|---|---|
+| `<file> isn't in recipe.config.ts yet` | add it to a step; the next `--write` sets `replaces: true` |
+| `imported but not in the app's package.json` | add it to `dependencies` with a version by hand |
 | `⚠ relative imports` | fix the import in your build app, pull again |
+
+Env vars a library reads **on its own** (Auth.js reads `AUTH_GITHUB_ID` without your code mentioning it) aren't
+found. Add those by hand.
 
 The script **refuses** `.env*`, `package.json`, lockfiles, `components/ui/*` and `*.md`. Each refusal tells you
 where that thing goes instead.
 
 ### ④ Write `recipe.config.ts`
 
-Start from an existing recipe that looks like yours (`recipes/resend` is the simplest). Full field list and rules:
-[`docs/recipe-format.md`](./docs/recipe-format.md).
+`recipe new` gave you a config full of `TODO`s, and `pull --write` added the packages, UI components and env var
+names. Fill in every `TODO`: `recipe check` fails while one is left. `recipes/resend` is a good example to copy from.
+Full field list and rules: [`docs/recipe-format.md`](./docs/recipe-format.md).
 
 What you write by hand:
 
@@ -156,7 +179,8 @@ What you write by hand:
 - `tier: "free"` (pro recipes live in a separate private repo)
 - `hosts`: which clean apps to test in. Use both `app-router-src` and `app-router-no-src` unless you need a database (`with-prisma`).
 - `steps`: from ①. Each needs `title`, `why` (1–3 short sentences) and `verify` (something the user can see).
-- `envVars`: names + a description + a fake `example`. **Never a real value.**
+  List each step's files with the `create("lib/…")` helper at the top of the config.
+- `envVars`: a description + a fake `example` for each name. **Never a real value.**
 - `prompts`: questions the CLI asks ("Add a starter form?"). Only if they really change what gets installed.
 - `manualSteps`: things no CLI can do (create an API key, verify a domain, run a migration).
 
@@ -165,15 +189,16 @@ What you write by hand:
 ### ⑤ Check
 
 ```bash
-bun run validate-recipes <name>      # is the manifest correct? do all files exist?
-bun run check-coverage <name>        # is every file in files/ used by exactly one step?
-bun run compose <name> --build       # does it build in a clean app? (this is what CI runs)
+bun run recipe check <name>
 ```
 
-Then prove **every stopping point** compiles, once per step id:
+It runs these in order and stops at the first failure. Run one by hand to repeat just the check that failed:
 
 ```bash
-bun run compose <name> --through <step-id> --typecheck
+bun run validate-recipes <name>      # is the manifest correct? do all files exist? any TODOs left? is guide.mdx ok?
+bun run check-coverage <name>        # is every file in files/ used by exactly one step?
+bun run compose <name> --through <step-id> --typecheck   # every stopping point compiles (once per step id)
+bun run compose <name> --build       # does it build in a clean app? (this is what CI runs)
 ```
 
 `compose` turns **every prompt on**. For each prompt you can answer "no" to, think it through by hand:
@@ -223,6 +248,19 @@ Every recipe will have a beginner guide on next.cnippet.dev, written in `recipes
 Order: **steps first, code second, guide words last.** Code changes while you build. Words written about code
 that doesn't work yet get rewritten.
 
+```bash
+bun run recipe guide <name>
+```
+
+writes a starter `guide.mdx`: one section per step with its `<Step id>`, and TODOs where the words go. Run it
+again after adding a step and it adds the missing sections, leaving your text alone.
+
+Once a `guide.mdx` exists, `validate-recipes` checks it: every step id in exactly one `<Step>`, no unknown ids,
+no code block longer than 5 lines (that's pasted code), frontmatter `title`, `description` and `recipe: <name>`,
+and no TODOs left.
+
+Want a first draft of the words? See [`docs/ai-drafting.md`](./docs/ai-drafting.md). You edit everything it writes.
+
 ---
 
 ## 7. What gets a PR rejected
@@ -250,16 +288,23 @@ that doesn't work yet get rewritten.
 # once
 bun install
 
-# first pull (no manifest yet)
-bun run pull-recipe <name> --from <app> <paths...>            # dry run
-bun run pull-recipe <name> --from <app> <paths...> --write    # copy
-#   → write recipes/<name>/recipe.config.ts
+# start a recipe + its build app (../build/<name>)
+bun run recipe new <name> [--host with-prisma] [--app <dir>]
+
+# first pull (steps don't list files yet)
+bun run recipe pull <name> --from <app> <paths...>            # dry run
+bun run recipe pull <name> --from <app> <paths...> --write    # copy + fill config
+#   → fill in the TODOs in recipes/<name>/recipe.config.ts
 
 # every time after
-bun run pull-recipe <name> --from <app> --diff
-bun run pull-recipe <name> --from <app> --write
+bun run recipe pull <name> --from <app> --diff
+bun run recipe pull <name> --from <app> --write
+
+# guide (optional today)
+bun run recipe guide <name>
 
 # checks
+bun run recipe check <name>                                    # all of the below, in order
 bun run validate-recipes <name>
 bun run check-coverage <name>
 bun run compose <name> --build

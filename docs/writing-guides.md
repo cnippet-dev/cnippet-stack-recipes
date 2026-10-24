@@ -45,6 +45,8 @@ You write the words **around** it: what the concept is, why it's done this way, 
 
 ## 4. Shape of a guide
 
+`bun run recipe guide <name>` writes this shape for you, with TODOs where the words go.
+
 ```mdx
 ---
 title: Add authentication to Next.js with Auth.js v5

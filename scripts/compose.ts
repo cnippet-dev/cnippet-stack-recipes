@@ -8,14 +8,13 @@ import { spawnSync } from "node:child_process";
 import { randomBytes, randomUUID } from "node:crypto";
 import {
   appendFileSync,
-  cpSync,
   existsSync,
   mkdirSync,
   readFileSync,
   rmSync,
   writeFileSync,
 } from "node:fs";
-import { dirname, join, relative, resolve, sep } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
 import {
@@ -28,17 +27,9 @@ import {
   type WhenScope,
 } from "@cnippet/recipe-kit";
 import { applyAstInject } from "./lib/ast-inject";
+import { copyHost } from "./lib/host";
 
 const ROOT = resolve(import.meta.dir, "..");
-
-// Host files that are build output or machine-specific, never copied.
-const HOST_EXCLUDES = [
-  "node_modules",
-  ".next",
-  ".turbo",
-  "next-env.d.ts",
-  `app${sep}generated`,
-];
 
 type PackageJson = {
   name: string;
@@ -291,22 +282,7 @@ async function main() {
     const dest = join(ROOT, ".compose", name, host);
 
     rmSync(dest, { force: true, recursive: true });
-    cpSync(hostDir, dest, {
-      filter: (src) => {
-        const rel = relative(hostDir, src);
-        return !HOST_EXCLUDES.some(
-          (ex) =>
-            rel === ex ||
-            rel.startsWith(`${ex}${sep}`) ||
-            rel.endsWith(`${sep}${ex}`),
-        );
-      },
-      recursive: true,
-    });
-    const pkgPath = join(dest, "package.json");
-    const pkg = readJson<PackageJson>(pkgPath);
-    pkg.name = `compose-${name}-${host}`;
-    writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`);
+    copyHost(hostDir, dest, `compose-${name}-${host}`);
 
     const applied: Applied = new Map();
     await applyRecipe(name, dest, applied, values.through);
