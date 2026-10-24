@@ -175,34 +175,34 @@ export default {
     {
       files: [
         {
-          source: "components/layout/create.tsx",
+          source: "components/posts/create.tsx",
           strategy: "create",
-          target: "{{srcDir}}components/layout/create.tsx",
+          target: "{{srcDir}}components/posts/create.tsx",
         },
         {
-          source: "components/layout/read.tsx",
+          source: "components/posts/read.tsx",
           strategy: "create",
-          target: "{{srcDir}}components/layout/read.tsx",
+          target: "{{srcDir}}components/posts/read.tsx",
         },
         {
-          source: "components/layout/update.tsx",
+          source: "components/posts/update.tsx",
           strategy: "create",
-          target: "{{srcDir}}components/layout/update.tsx",
+          target: "{{srcDir}}components/posts/update.tsx",
         },
         {
-          source: "components/layout/delete.tsx",
+          source: "components/posts/delete.tsx",
           strategy: "create",
-          target: "{{srcDir}}components/layout/delete.tsx",
+          target: "{{srcDir}}components/posts/delete.tsx",
         },
         {
-          source: "components/layout/header.tsx",
+          source: "components/posts/header.tsx",
           strategy: "create",
-          target: "{{srcDir}}components/layout/header.tsx",
+          target: "{{srcDir}}components/posts/header.tsx",
         },
         {
-          source: "components/layout/footer.tsx",
+          source: "components/posts/footer.tsx",
           strategy: "create",
-          target: "{{srcDir}}components/layout/footer.tsx",
+          target: "{{srcDir}}components/posts/footer.tsx",
         },
         {
           source: "app/posts/layout.tsx",
@@ -230,5 +230,5 @@ export default {
   tier: "free",
   title: "Prisma ORM",
   trustedBuildScripts: ["prisma", "@prisma/client", "@prisma/engines"],
-  version: "0.1.1",
+  version: "0.1.2",
 } satisfies RecipeManifestInput;

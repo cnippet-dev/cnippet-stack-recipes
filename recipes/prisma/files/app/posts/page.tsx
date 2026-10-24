@@ -1,9 +1,9 @@
-import { Create } from "@/components/layout/create";
-import { Delete } from "@/components/layout/delete";
-import { Footer } from "@/components/layout/footer";
-import { Header } from "@/components/layout/header";
-import { Read } from "@/components/layout/read";
-import { Update } from "@/components/layout/update";
+import { Create } from "@/components/posts/create";
+import { Delete } from "@/components/posts/delete";
+import { Footer } from "@/components/posts/footer";
+import { Header } from "@/components/posts/header";
+import { Read } from "@/components/posts/read";
+import { Update } from "@/components/posts/update";
 
 export default function Home() {
   return (
