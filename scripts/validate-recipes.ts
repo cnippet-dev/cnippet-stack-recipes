@@ -52,6 +52,88 @@ function importedUiComponents(filesDir: string): Set<string> {
   return used;
 }
 
+// Strings still holding a placeholder from `recipe new` / `pull-recipe --write`.
+function todoPaths(value: unknown, path = ""): string[] {
+  if (typeof value === "string") {
+    return value.includes("TODO") ? [path || "(root)"] : [];
+  }
+  if (value && typeof value === "object") {
+    return Object.entries(value).flatMap(([key, child]) =>
+      todoPaths(child, path ? `${path}.${key}` : key),
+    );
+  }
+  return [];
+}
+
+// Fenced code longer than this in a guide is pasted code; use <Step> instead.
+const MAX_FENCE_LINES = 5;
+const STEP_TAG = /<Step\s+id=["']([^"']+)["']/g;
+
+function validateGuide(
+  guidePath: string,
+  name: string,
+  stepIds: string[],
+): string[] {
+  const errors: string[] = [];
+  const text = readFileSync(guidePath, "utf8").replaceAll("\r\n", "\n");
+
+  const frontmatter = /^---\n([\s\S]*?)\n---/.exec(text)?.[1];
+  const fields = new Map(
+    (frontmatter ?? "").split("\n").map((line) => {
+      const colon = line.indexOf(":");
+      return [
+        line.slice(0, colon).trim(),
+        line
+          .slice(colon + 1)
+          .trim()
+          .replace(/^["']|["']$/g, ""),
+      ];
+    }),
+  );
+  for (const field of ["title", "description"]) {
+    if (!fields.get(field))
+      errors.push(`guide.mdx: frontmatter needs ${field}`);
+  }
+  if (fields.get("recipe") !== name) {
+    errors.push(`guide.mdx: frontmatter recipe must be "${name}"`);
+  }
+
+  const counts = new Map<string, number>();
+  for (const [, id] of text.matchAll(STEP_TAG)) {
+    counts.set(id, (counts.get(id) ?? 0) + 1);
+  }
+  for (const id of stepIds) {
+    const count = counts.get(id) ?? 0;
+    if (count !== 1) {
+      errors.push(
+        `guide.mdx: <Step id="${id}" /> appears ${count} times, needs 1`,
+      );
+    }
+  }
+  for (const id of counts.keys()) {
+    if (!stepIds.includes(id))
+      errors.push(`guide.mdx: unknown step id "${id}"`);
+  }
+
+  let fenceStart = -1;
+  for (const [index, line] of text.split("\n").entries()) {
+    if (!/^\s*(```|~~~)/.test(line)) continue;
+    if (fenceStart === -1) {
+      fenceStart = index;
+    } else {
+      if (index - fenceStart - 1 > MAX_FENCE_LINES) {
+        errors.push(
+          `guide.mdx:${fenceStart + 1}: code block is ${index - fenceStart - 1} lines — show code with <Step>, not pasted`,
+        );
+      }
+      fenceStart = -1;
+    }
+  }
+
+  if (text.includes("TODO")) errors.push("guide.mdx: still has TODOs");
+  return errors;
+}
+
 async function loadConfig(name: string): Promise<RecipeManifest | undefined> {
   const configPath = join(RECIPES_DIR, name, "recipe.config.ts");
   if (!existsSync(configPath)) return undefined;
@@ -111,6 +193,20 @@ async function validateRecipe(
     ];
   }
   const config = parsed.data;
+
+  for (const path of todoPaths(mod.default)) {
+    errors.push(`${path}: still a TODO — fill it in`);
+  }
+  const guidePath = join(recipeDir, "guide.mdx");
+  if (existsSync(guidePath)) {
+    errors.push(
+      ...validateGuide(
+        guidePath,
+        name,
+        config.steps.map((s) => s.id),
+      ),
+    );
+  }
 
   if (config.name !== name) {
     errors.push(`name "${config.name}" must equal folder name "${name}"`);

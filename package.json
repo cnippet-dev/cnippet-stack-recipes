@@ -30,6 +30,7 @@
     "format:all": "biome check --write --unsafe --no-errors-on-unmatched",
     "lint": "turbo run lint --",
     "pull-recipe": "bun scripts/pull-recipe.ts",
+    "recipe": "bun scripts/recipe.ts",
     "validate-recipes": "bun scripts/validate-recipes.ts"
   },
   "type": "module",

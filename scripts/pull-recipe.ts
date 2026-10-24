@@ -22,6 +22,12 @@
 // Dry run by default. --write copies; it refuses to overwrite a recipe file
 // with uncommitted changes (you may have edited it here) unless --force.
 // --diff prints a diff for every file that would change.
+//
+// When recipe.config.ts exists, --write also adds what the files need to it:
+// dependencies (versions from the app's package.json), cnippetUiComponents,
+// envVars (names from `process.env.X`, description left as a TODO) and
+// `replaces: true` on host files. It only adds, never removes or rewrites.
+// Env vars a library reads on its own (Auth.js `AUTH_GITHUB_ID`) aren't found.
 import { spawnSync } from "node:child_process";
 import {
   existsSync,
@@ -35,6 +41,7 @@ import { dirname, join, relative, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
 import { RecipeManifest, resolveTarget } from "@cnippet/recipe-kit";
+import { addToConfig, type ConfigAdditions } from "./lib/edit-config";
 
 const ROOT = resolve(import.meta.dir, "..");
 const DEFAULT_HOSTS = ["app-router-src", "app-router-no-src"];
@@ -66,6 +73,11 @@ const RESOLVE_SUFFIXES = [
 ];
 // `@/components/ui/button`, or a relative path ending in `ui/button`.
 const UI_IMPORT = /^(?:@\/components|\.{1,2}(?:\/[^/]+)*)\/ui\/([^/]+)$/;
+// `process.env.X` or `process.env["X"]`.
+const ENV_READ =
+  /process\.env(?:\.([A-Z_][A-Z0-9_]*)|\[["']([A-Z_][A-Z0-9_]*)["']\])/g;
+// Set by Node/Next, never by the user.
+const BUILTIN_ENV = new Set(["NODE_ENV", "NEXT_RUNTIME"]);
 
 type Pull = { source: string; from: string };
 type Status = "new" | "changed" | "same";
@@ -339,6 +351,7 @@ async function main() {
   const dirty = dirtyPaths(filesDir);
   const uiComponents = new Set<string>();
   const packages = new Set<string>();
+  const envNames = new Set<string>();
   const relativeImports = new Map<string, string[]>();
   const writes: { pull: Pull; contents: string; status: Status }[] = [];
 
@@ -351,6 +364,10 @@ async function main() {
         ? "same"
         : "changed";
 
+    for (const [, dotted, bracketed] of contents.matchAll(ENV_READ)) {
+      const env = dotted ?? bracketed;
+      if (env && !BUILTIN_ENV.has(env)) envNames.add(env);
+    }
     for (const [index, line] of contents.split("\n").entries()) {
       for (const [, specifier] of line.matchAll(IMPORT)) {
         if (!specifier) continue;
@@ -399,7 +416,15 @@ async function main() {
     }
   }
 
-  // Host files the config must mark as `replaces`.
+  // What the config still needs for these files. --write adds it when the
+  // config exists; otherwise these are hints for writing it.
+  const additions: ConfigAdditions = {
+    cnippetUiComponents: [],
+    dependencies: [],
+    devDependencies: [],
+    envVars: [],
+    replaces: [],
+  };
   if (config) {
     const configured = new Map(
       config.steps.flatMap((step) => step.files.map((f) => [f.source, f])),
@@ -411,9 +436,7 @@ async function main() {
           `\n${source} isn't in recipe.config.ts yet — add it to a step as a create with \`replaces: true\``,
         );
       } else if (!file.replaces) {
-        errors.push(
-          `${source}: set \`replaces: true\` on it in recipe.config.ts`,
-        );
+        additions.replaces.push(source);
       }
     }
   } else if (replacing.size) {
@@ -422,14 +445,11 @@ async function main() {
     );
   }
 
-  // What the config still needs to declare for these files.
   const declaredUi = new Set(config?.cnippetUiComponents ?? []);
-  const missingUi = [...uiComponents].filter((c) => !declaredUi.has(c)).sort();
-  if (missingUi.length) {
-    console.log(
-      `\ncnippetUiComponents${config ? " is missing" : ""}: ${JSON.stringify(missingUi)}`,
-    );
-  }
+  additions.cnippetUiComponents = [...uiComponents]
+    .filter((c) => !declaredUi.has(c))
+    .sort();
+
   const provided = hostPackages(hosts);
   for (const spec of [
     ...(config?.dependencies ?? []),
@@ -437,10 +457,31 @@ async function main() {
   ]) {
     provided.add(specName(spec));
   }
-  const missingPackages = [...packages].filter((p) => !provided.has(p)).sort();
-  if (missingPackages.length) {
+  const appPkg = JSON.parse(readFileSync(join(appDir, "package.json"), "utf8"));
+  const unversioned: string[] = [];
+  for (const pkg of [...packages].filter((p) => !provided.has(p)).sort()) {
+    const dep = appPkg.dependencies?.[pkg];
+    const dev = appPkg.devDependencies?.[pkg];
+    if (dep) additions.dependencies.push(`${pkg}@${dep}`);
+    else if (dev) additions.devDependencies.push(`${pkg}@${dev}`);
+    else unversioned.push(pkg);
+  }
+
+  const declaredEnv = new Set(config?.envVars.map((v) => v.name));
+  additions.envVars = [...envNames].filter((n) => !declaredEnv.has(n)).sort();
+
+  const found = Object.entries(additions).filter(([, items]) => items.length);
+  if (found.length) {
     console.log(
-      `dependencies${config ? " is missing" : " needed"}: ${JSON.stringify(missingPackages)} (take the versions from the app's package.json)`,
+      `\n${!config ? "put these in recipe.config.ts" : values.write ? "adding to recipe.config.ts" : "--write adds these to recipe.config.ts"}:`,
+    );
+    for (const [field, items] of found) {
+      console.log(`  ${field}: ${JSON.stringify(items)}`);
+    }
+  }
+  if (unversioned.length) {
+    console.log(
+      `\nimported but not in the app's package.json — add with a version by hand: ${JSON.stringify(unversioned)}`,
     );
   }
 
@@ -469,6 +510,17 @@ async function main() {
   console.log(
     `\n✓ wrote ${counts.new} new, ${counts.changed} changed into recipes/${name}/files/`,
   );
+  if (config && found.length) {
+    const configPath = join(ROOT, "recipes", name, "recipe.config.ts");
+    const skipped = addToConfig(configPath, additions);
+    console.log(`✓ updated recipes/${name}/recipe.config.ts`);
+    for (const line of skipped) console.warn(`⚠ ${line}`);
+    if (additions.envVars.length) {
+      console.log(
+        "  fill in each new env var's description (and an example) — they're TODOs",
+      );
+    }
+  }
   if (!config)
     console.log(
       `next: write recipe.config.ts, then bun run validate-recipes ${name}`,
