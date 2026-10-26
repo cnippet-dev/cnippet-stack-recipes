@@ -2,8 +2,8 @@
 
 Each recipe gets a beginner guide on next.cnippet.dev. It teaches the **same steps** the CLI installs.
 
-> **Status:** next.cnippet.dev doesn't render `guide.mdx` and the `<Step>` component doesn't exist yet.
-> This page describes how guides will work, so guides written now won't need rewriting.
+next.cnippet.dev builds a page at `/guides/<name>` for every `guide.mdx` with `status: published`.
+`recipes/authjs/guide.mdx` is the worked example. Drafts only show in the site's `next dev`.
 
 ---
 
