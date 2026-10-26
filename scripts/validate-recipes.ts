@@ -90,9 +90,35 @@ function validateGuide(
       ];
     }),
   );
-  for (const field of ["title", "description"]) {
+  // The parts of next.cnippet.dev's frontmatter schema (cnippet-mdx) a guide
+  // can get wrong; the site build rejects these.
+  for (const field of ["title", "description", "date"]) {
     if (!fields.get(field))
       errors.push(`guide.mdx: frontmatter needs ${field}`);
+  }
+  const title = fields.get("title") ?? "";
+  const description = fields.get("description") ?? "";
+  if (title.length > 70) {
+    errors.push("guide.mdx: title must be at most 70 characters");
+  }
+  if (description.length < 80 || description.length > 180) {
+    errors.push(
+      `guide.mdx: description must be 80–180 characters (is ${description.length})`,
+    );
+  }
+  if (
+    fields.get("date") &&
+    !/^\d{4}-\d{2}-\d{2}$/.test(fields.get("date") ?? "")
+  ) {
+    errors.push("guide.mdx: date must be YYYY-MM-DD");
+  }
+  if (fields.get("category") !== "guide") {
+    errors.push('guide.mdx: frontmatter category must be "guide"');
+  }
+  if (
+    !["draft", "published", "archived"].includes(fields.get("status") ?? "")
+  ) {
+    errors.push("guide.mdx: status must be draft, published or archived");
   }
   if (fields.get("recipe") !== name) {
     errors.push(`guide.mdx: frontmatter recipe must be "${name}"`);

@@ -242,8 +242,9 @@ change code in your build app → test → pull --diff → pull --write → chec
 
 Every recipe will have a beginner guide on next.cnippet.dev, written in `recipes/<name>/guide.mdx`.
 
-> **Status:** the site doesn't render `guide.mdx` yet. A PR without a guide is fine today.
-> If you want to write one, follow [`docs/writing-guides.md`](./docs/writing-guides.md).
+A guide shows up at `next.cnippet.dev/guides/<name>` once its frontmatter says `status: published`.
+A PR without a guide is still fine. To write one, follow [`docs/writing-guides.md`](./docs/writing-guides.md);
+`recipes/authjs/guide.mdx` is the example.
 
 Order: **steps first, code second, guide words last.** Code changes while you build. Words written about code
 that doesn't work yet get rewritten.

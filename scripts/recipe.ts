@@ -171,6 +171,9 @@ async function guide(name: string) {
       `---
 title: ${JSON.stringify(config.title)}
 description: ${JSON.stringify(config.description)}
+date: ${new Date().toISOString().slice(0, 10)}
+category: guide
+status: draft
 recipe: ${name}
 ---
 

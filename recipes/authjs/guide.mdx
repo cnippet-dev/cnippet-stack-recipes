@@ -1,0 +1,155 @@
+---
+title: Add authentication to Next.js with Auth.js v5
+description: Sign in with GitHub, Google or email and password, keep users in Postgres with Prisma, and protect pages by role.
+date: 2026-10-24
+category: guide
+status: published
+tags: [nextjs, auth, authjs, prisma]
+recipe: authjs
+---
+
+## What you'll build
+
+By the end, your Next.js app has:
+
+- A register page and a login page with email and password
+- "Continue with GitHub" and "Continue with Google" buttons
+- Users and their linked accounts stored in your Postgres database through Prisma
+- A `/dashboard` that only signed-in users can open, and an admin area only `ADMIN` users can open
+- Friendly error messages for wrong passwords and too many attempts
+
+## Before you start
+
+You need:
+
+- A Next.js 16 app using the App Router
+- A Postgres database, local (Docker) or hosted (Neon, Supabase, …), and its connection string
+- A GitHub account and a Google account, to create the two OAuth apps
+
+The guide uses Prisma for the database. If your app doesn't have Prisma yet, set it up first with the Prisma guide, or let the install command below do it: `cnippet-stack init authjs` installs the Prisma recipe first when it's missing.
+
+## How it works
+
+Auth.js is a library that handles signing in. You give it a list of **providers** (ways to sign in: GitHub, Google, email and password) and it handles the redirects, callbacks and cookies.
+
+After someone signs in, Auth.js keeps them signed in with a **session**. There are two ways to store one:
+
+- **Database sessions**: a row in a `Session` table, looked up on every request.
+- **JWT sessions**: a signed cookie that holds the user's id and role. Nothing to look up.
+
+This guide uses JWT sessions. Auth.js doesn't allow database sessions together with email and password sign-in, and JWTs have a second benefit you'll use in the last step: checking whether someone is signed in needs no database query.
+
+The **Prisma adapter** is the bridge between Auth.js and your database. It creates a user the first time someone signs in with GitHub or Google, and remembers which GitHub or Google account belongs to which user.
+
+## Step 1: Add the auth tables
+
+<Step id="schema-append" />
+
+These models are added to the end of your existing `schema.prisma`, between two marker comments. The markers let the CLI find the block again, so running the install twice doesn't add the tables twice.
+
+`User` gets two extra fields that Auth.js doesn't need on its own: `passwordHash` for email and password sign-in, and `role` for the admin checks in step 8. `Account` holds one row per linked GitHub or Google account.
+
+Run the migration so the tables exist in your database:
+
+```bash
+npx prisma migrate dev --name authjs
+```
+
+## Step 2: Split the config
+
+<Step id="auth-config" />
+
+The config is split in two files on purpose. `auth.config.ts` holds only what's cheap: the GitHub and Google providers, the login page path and the route check. It never imports Prisma.
+
+That matters because `proxy.ts` (step 8) imports this file, and the proxy runs before **every** request to a protected page. With JWT sessions it can decide "signed in or not" from the cookie alone, without loading the database client or opening a connection.
+
+GitHub and Google read their keys from `AUTH_GITHUB_ID`, `AUTH_GITHUB_SECRET`, `AUTH_GOOGLE_ID` and `AUTH_GOOGLE_SECRET` on their own. That's why the providers are listed without any options.
+
+<Callout type="warning" title="Callback URLs must match exactly">
+When you create the OAuth apps, the callback URL must be your app's address plus `/api/auth/callback/github` (or `/google`). Locally that's `http://localhost:3000/api/auth/callback/github`. A different port or a missing path is the most common setup error.
+</Callout>
+
+## Step 3: Check email and password
+
+<Step id="credentials" />
+
+`authorizeCredentials` runs when someone submits the login form. It validates the input with Zod, finds the user by email and compares the password with the stored hash using bcrypt.
+
+When the password is wrong, it throws `InvalidCredentialsError` instead of returning nothing. The login form can then show "Invalid email or password." instead of a generic failure. It deliberately says the same thing for an unknown email, so nobody can use the form to find out which emails have accounts.
+
+`lib/env.ts` checks that `AUTH_SECRET` and `DATABASE_URL` are set as soon as the app starts. A missing value fails right away with a clear message, not later on someone's first sign-in.
+
+## Step 4: Create the Auth.js instance
+
+<Step id="server-instance" />
+
+`auth.ts` combines the cheap config from step 2 with the parts that need the database: the Prisma adapter and the email and password provider.
+
+The two callbacks copy the user's `id` and `role` into the JWT when they sign in, then from the JWT into the session. That's how `session.user.role` is available everywhere without a database query. The trade-off: if you change someone's role, they see the change after their token refreshes, not instantly.
+
+`lib/dal.ts` (the data access layer) gives server components three small helpers: `getCurrentUser()`, `requireUser()` (redirects to `/login` when signed out) and `requireRole("ADMIN")`.
+
+## Step 5: Mount the route handler
+
+<Step id="route-handler" />
+
+This one file serves every Auth.js endpoint: the GitHub and Google callbacks, sign-in, sign-out and the session. The `[...nextauth]` folder name catches every path under `/api/auth/`.
+
+Start the dev server and check that all three providers are there:
+
+```bash
+curl http://localhost:3000/api/auth/providers
+```
+
+## Step 6: Add the server actions
+
+<Step id="server-actions" />
+
+The forms call these server actions instead of an API route. Each action:
+
+- rate-limits by IP address (5 attempts per minute)
+- for register: validates the input, refuses an email that's already taken, and hashes the password before it's stored
+- turns Auth.js errors into a sentence a person can read
+
+The rate limiter keeps its counts in memory. That's fine on one server. If you run several instances, they don't share counts, so swap it for a shared store such as Redis before you rely on it.
+
+## Step 7: Add the login and register pages
+
+<Step id="starter-ui" />
+
+The `(auth)` folder groups the login and register pages under one layout without adding `(auth)` to the URL. The GitHub and Google buttons start the OAuth flow, and the session provider lets client components like the header notice a sign-in without a page reload.
+
+Try the whole flow now: register at `/register`, sign out, sign back in, then try GitHub and Google.
+
+## Step 8: Protect routes
+
+<Step id="route-protection" />
+
+Protection happens in two layers:
+
+1. **`proxy.ts`** runs before the page renders and sends signed-out visitors on `/dashboard`, `/settings` and `/profile` to `/login`.
+2. **The pages check again** with `requireUser()` and `requireRole("ADMIN")` from the data access layer.
+
+The second check isn't redundant. The proxy only runs for the paths in its `matcher`, and a page can also be reached in ways the proxy doesn't see. Checking where the data is read is the check you can rely on.
+
+To make yourself an admin, open `npx prisma studio`, find your user and set `role` to `ADMIN`. Sign out and back in so your token picks up the new role.
+
+## When things go wrong
+
+**"Invalid email or password."** The email isn't registered, the password is wrong, or the account was created with GitHub or Google and has no password. Sign in the way the account was created.
+
+**"An account already exists with this email. Please sign in with your email and password instead."** You signed in with GitHub or Google using an email that already has an account. Auth.js doesn't link accounts with the same email automatically, because an attacker could otherwise take over an account through a provider that doesn't verify emails.
+
+**"Too many attempts. Please try again later."** More than 5 attempts in a minute from your IP address. Wait a minute. In development, restarting the dev server also clears the counts.
+
+**"AUTH_SECRET is required"** or **"DATABASE_URL is required"** when the app starts. The variable is missing from `.env`. Generate a secret with `npx auth secret`, or copy your database's connection string.
+
+**GitHub says the redirect_uri is not associated with this application, or Google shows redirect_uri_mismatch.** The callback URL in the OAuth app doesn't match your app. Check the port, `http` vs `https`, and the full `/api/auth/callback/github` path.
+
+**Type errors about `passwordHash` or `role`.** The Prisma Client is older than your schema. Run `npx prisma generate`, then restart the TypeScript server in your editor.
+
+## Next steps
+
+- Add more providers: Auth.js supports dozens, each in a line or two in `auth.config.ts`.
+- Send a welcome email when someone registers, with the Resend guide.
+- Replace the in-memory rate limiter with Redis before running more than one server.
