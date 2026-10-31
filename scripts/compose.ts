@@ -1,9 +1,11 @@
 // Composes a recipe into a fresh copy of each host it declares, so CI (and
 // you) can build it. Usage:
-//   bun run compose <recipe> [--host <host>] [--through <step-id>] [--build | --typecheck]
+//   bun run compose <recipe> [--host <host>] [--through <step-id>] [--answers <json>] [--build | --typecheck]
 // Output: .compose/<recipe>/<host>/. `--through` stops after that step (the
 // partial-install rule); `--build` then installs, runs shadcn + postInstall,
 // and runs `next build` + `tsc --noEmit`. `--typecheck` skips `next build`.
+// `--answers '{"starterUi":false}'` overrides the all-on answers of <recipe>
+// (not of the recipes it requires), to test the branches that are off.
 import { spawnSync } from "node:child_process";
 import { randomBytes, randomUUID } from "node:crypto";
 import {
@@ -83,6 +85,12 @@ function detect(dest: string) {
   };
 }
 
+// Set from --answers in main(); applies to the recipe named on the command line.
+let answerOverrides: { recipe: string; values: Record<string, unknown> } = {
+  recipe: "",
+  values: {},
+};
+
 type Applied = Map<string, { config: RecipeManifest; steps: Step[] }>;
 
 async function applyRecipe(
@@ -108,7 +116,10 @@ async function applyRecipe(
     throw new Error(`${name} does not support orm "${detect(dest).orm}"`);
   }
 
-  const answers = maximalAnswers(config.prompts);
+  const answers = {
+    ...maximalAnswers(config.prompts),
+    ...(name === answerOverrides.recipe ? answerOverrides.values : {}),
+  };
   const scope: WhenScope = { answers, detection };
   const recipeDir = join(ROOT, "recipes", name);
   const files = renderFiles(config, recipeDir, scope, through);
@@ -259,6 +270,7 @@ async function main() {
   const { positionals, values } = parseArgs({
     allowPositionals: true,
     options: {
+      answers: { type: "string" },
       build: { type: "boolean" },
       host: { type: "string" },
       through: { type: "string" },
@@ -268,9 +280,12 @@ async function main() {
   const [name] = positionals;
   if (!name) {
     console.error(
-      "usage: bun run compose <recipe> [--host <host>] [--through <step-id>] [--build | --typecheck]",
+      "usage: bun run compose <recipe> [--host <host>] [--through <step-id>] [--answers <json>] [--build | --typecheck]",
     );
     process.exit(1);
+  }
+  if (values.answers) {
+    answerOverrides = { recipe: name, values: JSON.parse(values.answers) };
   }
 
   const { hosts: declared } = await loadRecipe(name);

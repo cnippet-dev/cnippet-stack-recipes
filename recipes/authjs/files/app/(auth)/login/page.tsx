@@ -1,3 +1,4 @@
+import { oauthProviders } from "@/auth.config";
 import { LoginForm } from "@/components/auth/login-form";
 import { OAuthButtons } from "@/components/auth/oauth-buttons";
 import { getAuthErrorMessage } from "@/lib/errors/handle-auth-errors";
@@ -11,6 +12,9 @@ export default async function LoginPage({
   const oauthError = getAuthErrorMessage(error, code);
 
   return (
-    <LoginForm initialError={oauthError} oauthButtons={<OAuthButtons />} />
+    <LoginForm
+      initialError={oauthError}
+      oauthButtons={oauthProviders.length > 0 && <OAuthButtons />}
+    />
   );
 }

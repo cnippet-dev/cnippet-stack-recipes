@@ -27,7 +27,9 @@
       "!**/.next",
       "!**/.compose",
       "!**/demos/*/app/generated/prisma",
-      "!**/hosts/*/app/generated/prisma"
+      "!**/hosts/*/app/generated/prisma",
+      "!**/hosts/*/src/app/generated/prisma",
+      "!!recipes/biome/files/biome.json"
     ]
   },
   "formatter": {
@@ -101,6 +103,15 @@
             "noUndeclaredEnvVars": "off"
           }
         }
+      }
+    },
+    {
+      "assist": {
+        "actions": { "source": { "organizeImports": "off" } }
+      },
+      "includes": ["recipes/authjs/files/lib/auth/oauth-providers.ts"],
+      "linter": {
+        "rules": { "complexity": { "noUselessEmptyExport": "off" } }
       }
     }
   ],

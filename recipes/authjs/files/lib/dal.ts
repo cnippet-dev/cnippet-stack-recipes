@@ -9,7 +9,11 @@ export const getCurrentUser = cache(async () => {
 
 export const requireUser = cache(async () => {
   const session = await auth();
+  // #if answers.starterUi
   if (!session?.user) redirect("/login");
+  // #else
+  if (!session?.user) redirect("/api/auth/signin");
+  // #endif
   return session.user;
 });
 

@@ -13,7 +13,7 @@ recipe: authjs
 By the end, your Next.js app has:
 
 - A register page and a login page with email and password
-- "Continue with GitHub" and "Continue with Google" buttons
+- A sign-in button for each OAuth provider you pick: GitHub, Google, Discord, or none
 - Users and their linked accounts stored in your Postgres database through Prisma
 - A `/dashboard` that only signed-in users can open, and an admin area only `ADMIN` users can open
 - Friendly error messages for wrong passwords and too many attempts
@@ -24,9 +24,11 @@ You need:
 
 - A Next.js 16 app using the App Router
 - A Postgres database, local (Docker) or hosted (Neon, Supabase, …), and its connection string
-- A GitHub account and a Google account, to create the two OAuth apps
+- An account with each OAuth provider you want (GitHub, Google, Discord), to create its OAuth app
 
 The guide uses Prisma for the database. If your app doesn't have Prisma yet, set it up first with the Prisma guide, or let the install command below do it: `cnippet-stack init authjs` installs the Prisma recipe first when it's missing.
+
+The install asks two questions: which OAuth providers you want (GitHub and Google by default), and whether to add the starter pages. The code below shows the defaults.
 
 ## How it works
 
@@ -59,14 +61,14 @@ npx prisma migrate dev --name authjs
 
 <Step id="auth-config" />
 
-The config is split in two files on purpose. `auth.config.ts` holds only what's cheap: the GitHub and Google providers, the login page path and the route check. It never imports Prisma.
+The config is split in two files on purpose. `auth.config.ts` holds only what's cheap: the OAuth providers, the login page path and the route check. It never imports Prisma.
 
 That matters because `proxy.ts` (step 8) imports this file, and the proxy runs before **every** request to a protected page. With JWT sessions it can decide "signed in or not" from the cookie alone, without loading the database client or opening a connection.
 
-GitHub and Google read their keys from `AUTH_GITHUB_ID`, `AUTH_GITHUB_SECRET`, `AUTH_GOOGLE_ID` and `AUTH_GOOGLE_SECRET` on their own. That's why the providers are listed without any options.
+The providers you picked are listed in `lib/auth/oauth-providers.ts`, one line each. `auth.config.ts` uses whatever that file exports, so adding a provider later is one line there. Each provider reads its keys from `AUTH_<PROVIDER>_ID` and `AUTH_<PROVIDER>_SECRET` on its own, for example `AUTH_GITHUB_ID` and `AUTH_GITHUB_SECRET`. That's why they're listed without any options.
 
 <Callout type="warning" title="Callback URLs must match exactly">
-When you create the OAuth apps, the callback URL must be your app's address plus `/api/auth/callback/github` (or `/google`). Locally that's `http://localhost:3000/api/auth/callback/github`. A different port or a missing path is the most common setup error.
+When you create the OAuth apps, the callback URL must be your app's address plus `/api/auth/callback/` and the provider, for example `/api/auth/callback/github`. Locally that's `http://localhost:3000/api/auth/callback/github`. A different port or a missing path is the most common setup error.
 </Callout>
 
 ## Step 3: Check email and password
@@ -77,7 +79,9 @@ When you create the OAuth apps, the callback URL must be your app's address plus
 
 When the password is wrong, it throws `InvalidCredentialsError` instead of returning nothing. The login form can then show "Invalid email or password." instead of a generic failure. It deliberately says the same thing for an unknown email, so nobody can use the form to find out which emails have accounts.
 
-`lib/env.ts` checks that `AUTH_SECRET` and `DATABASE_URL` are set as soon as the app starts. A missing value fails right away with a clear message, not later on someone's first sign-in.
+`lib/auth/db.ts` holds every database call the recipe makes: finding a user, creating one, and the Prisma adapter. Nothing else imports Prisma. If your Prisma client isn't at `@/lib/db/prisma`, that file's import is the only one to change.
+
+`lib/auth/env.ts` checks that `AUTH_SECRET` and `DATABASE_URL` are set as soon as the app starts. A missing value fails right away with a clear message, not later on someone's first sign-in.
 
 ## Step 4: Create the Auth.js instance
 
@@ -93,9 +97,9 @@ The two callbacks copy the user's `id` and `role` into the JWT when they sign in
 
 <Step id="route-handler" />
 
-This one file serves every Auth.js endpoint: the GitHub and Google callbacks, sign-in, sign-out and the session. The `[...nextauth]` folder name catches every path under `/api/auth/`.
+This one file serves every Auth.js endpoint: the OAuth callbacks, sign-in, sign-out and the session. The `[...nextauth]` folder name catches every path under `/api/auth/`.
 
-Start the dev server and check that all three providers are there:
+Start the dev server and check that `credentials` and your OAuth providers are there:
 
 ```bash
 curl http://localhost:3000/api/auth/providers
@@ -117,9 +121,9 @@ The rate limiter keeps its counts in memory. That's fine on one server. If you r
 
 <Step id="starter-ui" />
 
-The `(auth)` folder groups the login and register pages under one layout without adding `(auth)` to the URL. The GitHub and Google buttons start the OAuth flow, and the session provider lets client components like the header notice a sign-in without a page reload.
+The `(auth)` folder groups the login and register pages under one layout without adding `(auth)` to the URL. Each OAuth button starts that provider's sign-in flow, and the session provider lets client components like the header notice a sign-in without a page reload.
 
-Try the whole flow now: register at `/register`, sign out, sign back in, then try GitHub and Google.
+Try the whole flow now: register at `/register`, sign out, sign back in, then try each OAuth provider.
 
 ## Step 8: Protect routes
 
@@ -144,12 +148,12 @@ To make yourself an admin, open `npx prisma studio`, find your user and set `rol
 
 **"AUTH_SECRET is required"** or **"DATABASE_URL is required"** when the app starts. The variable is missing from `.env`. Generate a secret with `npx auth secret`, or copy your database's connection string.
 
-**GitHub says the redirect_uri is not associated with this application, or Google shows redirect_uri_mismatch.** The callback URL in the OAuth app doesn't match your app. Check the port, `http` vs `https`, and the full `/api/auth/callback/github` path.
+**GitHub says the redirect_uri is not associated with this application, or Google or Discord shows redirect_uri_mismatch.** The callback URL in the OAuth app doesn't match your app. Check the port, `http` vs `https`, and the full `/api/auth/callback/<provider>` path.
 
 **Type errors about `passwordHash` or `role`.** The Prisma Client is older than your schema. Run `npx prisma generate`, then restart the TypeScript server in your editor.
 
 ## Next steps
 
-- Add more providers: Auth.js supports dozens, each in a line or two in `auth.config.ts`.
+- Add more providers: Auth.js supports dozens, each one line in `lib/auth/oauth-providers.ts` plus its two env vars.
 - Send a welcome email when someone registers, with the Resend guide.
 - Replace the in-memory rate limiter with Redis before running more than one server.

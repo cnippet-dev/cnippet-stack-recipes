@@ -7,16 +7,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { getProfile } from "@/lib/auth/db";
 import { requireUser } from "@/lib/dal";
-import prisma from "@/lib/db/prisma";
 
 export default async function Profile() {
   const authUser = await requireUser();
 
-  const user = await prisma.user.findUniqueOrThrow({
-    include: { accounts: { select: { provider: true } } },
-    where: { id: authUser.id },
-  });
+  const user = await getProfile(authUser.id);
 
   const signInMethods = user.accounts.map((account) => account.provider);
   if (user.passwordHash) signInMethods.unshift("credentials");

@@ -34,7 +34,14 @@ If there's any error, nothing is written.
 
 ## Testing the "off" paths
 
-`compose` answers **yes** to every prompt, so the "no" answers aren't built automatically. For each prompt:
+`compose` answers **yes** to every prompt, so the "no" answers aren't built automatically. Build them with
+`--answers`, which overrides the recipe's own answers (not those of the recipes it requires):
+
+```bash
+bun run compose authjs --answers '{"starterUi":false,"providers":[]}' --build
+```
+
+Build the least the recipe can install (every confirm off, every multiselect empty) at least once. To find what breaks:
 
 1. Find every file and env var with `when: "answers.<thatPrompt>"`.
 2. Ask: "If these are skipped, does any **other** file still import them?" The answer must be no.
