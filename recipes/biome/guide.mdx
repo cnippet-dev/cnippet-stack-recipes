@@ -1,0 +1,88 @@
+---
+title: Lint and format Next.js with Biome
+description: Replace ESLint and Prettier with Biome, one fast tool for linting, formatting and import sorting, with Next.js rules and format-on-save.
+date: 2026-10-31
+category: guide
+status: published
+tags: [nextjs, biome, linting, formatting, tooling]
+recipe: biome
+---
+
+## What you'll build
+
+By the end, your Next.js app has:
+
+- One command, `npx biome check`, that lints, checks formatting and sorts imports
+- The Next.js and React rules, so a plain `<img>` or a hook called inside an `if` gets flagged
+- One `--write` command that fixes everything it safely can
+- VS Code formatting and fixing each file when you save
+
+## Before you start
+
+You need a Next.js 16 app. Nothing else: Biome is one package with no plugins and no peer dependencies.
+
+Using VS Code? Have it open, so it can suggest the Biome extension in the last step.
+
+To skip the steps and install it all at once: `npx cnippet-stack init biome`.
+
+## How it works
+
+Most Next.js projects use two tools: ESLint finds bugs and Prettier formats the code. Each needs its own config, its own plugins and its own editor extension, and they can argue with each other.
+
+Biome does both jobs in one tool, written in Rust, so it checks a whole project in milliseconds. Its rules are grouped into **domains**. Turning on the `next` and `react` domains switches on the rules for those libraries, so you don't hunt for plugins.
+
+`biome check` runs all three jobs at once: the **linter** (bugs and bad patterns), the **formatter** (spacing, quotes, line breaks) and the **assist** (sorting your imports). Add `--write` and it fixes what it safely can.
+
+## Step 1: Add the Biome config
+
+<Step id="biome-config" />
+
+The config sets 2-space indents and double quotes, which matches the code `create-next-app` writes, so a fresh app passes with no changes.
+
+A few settings are worth knowing:
+
+- **`vcs.useIgnoreFile`** makes Biome skip whatever `.gitignore` skips: `.next`, `node_modules` and generated code like the Prisma client.
+- **`!**/components/ui`** skips the UI components. They come from a registry and you don't edit them, so warnings there are noise.
+- **`css.parser.tailwindDirectives`** teaches Biome Tailwind v4's `@theme` and `@custom-variant`. Without it, `globals.css` fails to parse.
+
+Install the package with an exact version (the `-E`), because a new Biome version can format code a little differently:
+
+```bash
+npm install -D -E @biomejs/biome@2.6.4
+```
+
+Then add two scripts to `package.json`, so you and your CI run the same thing: `"lint": "biome check"` and `"format": "biome check --write"`.
+
+Run it:
+
+```bash
+npx biome check
+```
+
+If you're moving off ESLint or Prettier, `npx biome migrate eslint --write` and `npx biome migrate prettier --write` copy your rules into `biome.json`. Then delete the old config files and packages.
+
+## Step 2: Format on save in VS Code
+
+<Step id="editor-setup" />
+
+`extensions.json` makes VS Code offer the Biome extension to anyone who opens the project. Click **Install** when it asks.
+
+`settings.json` makes Biome the formatter and runs two fixes on save: safe lint fixes and import sorting. Both files live in the project, so everyone on your team gets the same setup.
+
+## When things go wrong
+
+**"Tailwind-specific syntax is disabled."** on `globals.css`. Biome doesn't know Tailwind v4's directives. Check that `css.parser.tailwindDirectives` is `true` in `biome.json`.
+
+**"Found an unknown key `organizeImports`."** Your `biome.json` is written for Biome 1. In Biome 2, import sorting moved to `assist.actions.source.organizeImports`. Run `npx biome migrate --write` to update the file.
+
+**Every file "would have printed the following content", but nothing looks different.** The files have Windows line endings (CRLF) and Biome wants LF. This happens when git's `core.autocrlf` is on. Run `npx biome check --write` once, or set `git config core.autocrlf input` so it doesn't happen again.
+
+**`lint/performance/noImgElement`** on an `<img>`. That's the Next.js domain at work: use `next/image`, which resizes and lazy-loads the picture. **`lint/a11y/useAltText`** next to it means the image needs an `alt` text for screen readers.
+
+**Saving doesn't format.** Another formatter, usually Prettier, is still the default. Check that the Biome extension is installed, then reload the window. The project's `settings.json` overrides your personal one.
+
+## Next steps
+
+- Run `npx biome ci` in your CI pipeline. It's `check` without `--write`, and it fails the build on any error.
+- Add pre-commit hooks with Husky and lint-staged, so unformatted code never gets committed.
+- Turn on more rule groups in `biome.json` as your team agrees on them.

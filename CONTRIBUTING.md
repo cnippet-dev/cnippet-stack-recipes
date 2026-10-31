@@ -201,8 +201,8 @@ bun run compose <name> --through <step-id> --typecheck   # every stopping point 
 bun run compose <name> --build       # does it build in a clean app? (this is what CI runs)
 ```
 
-`compose` turns **every prompt on**. For each prompt you can answer "no" to, think it through by hand:
-"If this file is skipped, does anything still import it?" Details: [`docs/troubleshooting.md`](./docs/troubleshooting.md#testing-the-off-paths).
+`compose` turns **every prompt on**. To build the "no" answers too, override them:
+`bun run compose <name> --answers '{"starterUi":false}' --build`. Details: [`docs/troubleshooting.md`](./docs/troubleshooting.md#testing-the-off-paths).
 
 Something failed? Fix it **in your build app**, pull again, check again.
 

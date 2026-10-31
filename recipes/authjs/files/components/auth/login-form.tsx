@@ -9,7 +9,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -77,15 +76,7 @@ export function LoginForm({
               />
             </Field>
             <Field>
-              <div className="flex w-full items-center justify-between">
-                <FieldLabel htmlFor="password">Password</FieldLabel>
-                <a
-                  className="text-muted-foreground text-xs underline-offset-4 hover:underline"
-                  href="#"
-                >
-                  Forgot Password?
-                </a>
-              </div>
+              <FieldLabel htmlFor="password">Password</FieldLabel>
               <InputGroup className="rounded-xs">
                 <InputGroupInput
                   autoComplete="current-password"
@@ -122,26 +113,17 @@ export function LoginForm({
             </Button>
           </div>
         </form>
-        <div className="mt-5 flex flex-col gap-6">
-          <div className="flex items-center gap-3 text-muted-foreground text-xs">
-            <Separator className="flex-1" />
-            <span>Or continue with</span>
-            <Separator className="flex-1" />
+        {oauthButtons && (
+          <div className="mt-5 flex flex-col gap-6">
+            <div className="flex items-center gap-3 text-muted-foreground text-xs">
+              <Separator className="flex-1" />
+              <span>Or continue with</span>
+              <Separator className="flex-1" />
+            </div>
+            {oauthButtons}
           </div>
-          {oauthButtons}
-        </div>
+        )}
       </CardContent>
-      <CardFooter>
-        <p className="w-full text-center text-muted-foreground text-xs">
-          By clicking continue, you agree to our{" "}
-          <a
-            className="underline underline-offset-4 hover:text-primary"
-            href="#"
-          >
-            Terms of Service
-          </a>
-        </p>
-      </CardFooter>
     </Card>
   );
 }

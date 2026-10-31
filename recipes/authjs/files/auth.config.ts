@@ -1,7 +1,9 @@
 import type { NextAuthConfig } from "next-auth";
-import GitHub from "next-auth/providers/github";
-import Google from "next-auth/providers/google";
+import type { Provider } from "next-auth/providers";
+import * as oauth from "@/lib/auth/oauth-providers";
 import { canAccessRoute } from "@/lib/auth/route-guard";
+
+export const oauthProviders: Provider[] = Object.values(oauth);
 
 export const authConfig = {
   callbacks: {
@@ -9,9 +11,11 @@ export const authConfig = {
       return canAccessRoute(auth, request.nextUrl.pathname);
     },
   },
+  // #if answers.starterUi
   pages: {
     signIn: "/login",
   },
-  providers: [Google, GitHub],
+  // #endif
+  providers: oauthProviders,
   trustHost: true,
 } satisfies NextAuthConfig;
