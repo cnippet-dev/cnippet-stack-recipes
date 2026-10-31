@@ -39,6 +39,8 @@ yarn-error.log*
 
 .claude
 .vscode
+# ...except .vscode files a recipe installs (e.g. biome)
+!recipes/*/files/.vscode
 TEST.md
 # Recipe compositions (scripts/compose.ts)
 .compose
