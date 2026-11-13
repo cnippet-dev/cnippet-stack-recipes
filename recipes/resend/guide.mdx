@@ -1,0 +1,128 @@
+---
+title: Send email from Next.js with Resend
+description: Send transactional email with Resend from a validated server action, and get delivery, bounce and spam reports back through a signed webhook.
+date: 2026-11-13
+category: guide
+status: published
+tags: [nextjs, email, resend, server-actions]
+recipe: resend
+---
+
+## What you'll build
+
+By the end, your Next.js app has:
+
+- One Resend client, shared by the whole app, that fails at startup if the API key is missing
+- A `sendWelcome()` function that returns success or a readable error, and never crashes the page
+- A server action that checks the form input with Zod before anything is sent
+- Optionally, a form on the home page to send a test email
+- Optionally, a webhook route that hears back when an email is delivered, bounces or is marked as spam
+
+## Before you start
+
+You need:
+
+- A Next.js 16 app using the App Router
+- A free account at resend.com
+
+For local testing you don't need your own domain: Resend's `onboarding@resend.dev` sender works, but only to the email address you signed up with.
+
+To skip the steps and install it all at once: `npx cnippet-stack init resend`. It asks two questions: whether to add the starter form (yes by default) and whether to add the webhook route (no by default).
+
+## How it works
+
+Resend is an email API. Your server sends it a request with the sender, the recipient, a subject and some HTML, and Resend delivers the email. Your app never talks to a mail server itself.
+
+The API key is a password for your Resend account, so the request must come from your server, never from the browser. That's why the flow is:
+
+1. The form posts to a **server action**, a function that runs only on the server.
+2. The action validates the input, then calls `sendWelcome()`.
+3. `sendWelcome()` calls Resend with the key from `.env`.
+
+After sending, Resend can call **you** back with what happened to the email. That's the optional webhook in the last step.
+
+## Step 1: Create the Resend client
+
+<Step id="client" />
+
+Install the packages first:
+
+```bash
+npm install resend zod
+```
+
+The file checks for `RESEND_API_KEY` as soon as it's imported. If the key is missing, the app fails at startup with a message that says what to do. Without the check, you'd find out at the first send, as a 401 error that looks like a Resend outage.
+
+## Step 2: Add a typed send function
+
+<Step id="send-helper" />
+
+Set `EMAIL_FROM` in `.env` to `onboarding@resend.dev` for now. When you're ready for real users, verify your own domain in the Resend dashboard and change it.
+
+Most libraries throw an error when a request fails. Resend's SDK doesn't: it returns an object with `data` and `error`, and you have to check `error` yourself. `sendWelcome()` turns that into one of two results: `ok: true` with the email's `id`, or `ok: false` with an `error` message. TypeScript then makes every caller handle both.
+
+The name goes into the email's HTML, so `escapeHtml` replaces characters like &lt; and &amp; first. Otherwise someone could type HTML into the name field and it would end up inside the email you send.
+
+## Step 3: Add the input schema
+
+<Step id="validation" />
+
+The schema checks that the email is a real address and the name is 1 to 50 characters. The form's `required` and `type="email"` attributes help the person typing, but anyone can skip them by calling the action directly. This schema runs on the server, so it can't be skipped.
+
+## Step 4: Wire the server action
+
+<Step id="server-action" />
+
+The `"use server"` line at the top makes every export in the file a server action. The form can call it like a function, but the code runs on your server, so the API key never reaches the browser.
+
+The action never throws. Bad input returns the first Zod message, and an unexpected failure returns "Could not send the email. Please try again." The form always gets something it can show, instead of an error page.
+
+## Step 5: Add the email form
+
+<Step id="starter-ui" />
+
+This step **replaces your home page** with the test form, so only add it to a new app or one where you don't mind. The install command asks first.
+
+The form uses React's `useActionState`. It calls the action, keeps the last result in `state` and sets `pending` while the email is on its way, so the button shows a spinner and the message below it updates when the send finishes.
+
+The button, input and label are Cnippet UI components. If you're not using the install command, add them with shadcn:
+
+```bash
+npx shadcn add @cnippet/button @cnippet/input @cnippet/label
+```
+
+Send yourself an email. "Sent!" and an id appear under the button, and the same id shows in the Resend dashboard under **Emails**.
+
+## Step 6: Receive delivery events
+
+<Step id="webhook" />
+
+Resend can't call `localhost`. To test this route locally, expose your dev server with a tunnel such as ngrok or Cloudflare Tunnel, and use that public address in the dashboard.
+
+Anyone can send a POST request to your webhook URL, so the route first checks the request's **signature**. Resend signs every event with your signing secret, and `resend.webhooks.verify()` checks the three `svix-` headers against the body. A request without a valid signature gets a 400.
+
+The route reads the body with `req.text()`, not `req.json()`. The signature is made from the exact bytes Resend sent. Parsing the JSON and turning it back into text can change spacing or key order, and then the check fails on every real event.
+
+For now the route only logs the event. Replace the `console.log` with your own code, for example marking an address as bounced so you stop sending to it.
+
+## When things go wrong
+
+**"RESEND_API_KEY is not set. Create a key at https://resend.com/api-keys and add it to .env."** at startup. The key is missing from `.env`, or the dev server was started before you added it. Add it and restart.
+
+**"EMAIL_FROM is not set."** under the form. Add `EMAIL_FROM` to `.env` and restart.
+
+**An error starting with "validation_error:" that says you can only send testing emails to your own email address.** You're using `onboarding@resend.dev` and sending to someone else. Send to your own signup address, or verify a domain and send from it.
+
+**An error starting with "validation_error:" about the domain not being verified.** `EMAIL_FROM` uses a domain you haven't verified, or that's still pending. Check its status under **Domains** in the Resend dashboard.
+
+**The email sends but lands in spam.** The domain's DNS records (SPF, DKIM) aren't set yet. The dashboard lists the records to add for your domain.
+
+**The webhook route returns "Invalid signature" to every event.** `RESEND_WEBHOOK_SECRET` is from a different endpoint, or something parsed the body before the check. Copy the secret again from that endpoint's page, and keep `req.text()`.
+
+**The webhook route returns "RESEND_WEBHOOK_SECRET is not set".** Add the signing secret to `.env` and restart.
+
+## Next steps
+
+- Send the welcome email when someone registers, from the Auth.js guide's register action.
+- Build your emails as React components with React Email instead of HTML strings.
+- Save webhook events in your database with the Prisma guide, so you can stop sending to addresses that bounce.
