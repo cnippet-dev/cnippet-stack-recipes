@@ -1,0 +1,167 @@
+---
+title: Set up Prisma 7 with Postgres in Next.js
+description: Connect Next.js to Postgres with Prisma 7, model posts and tags, and build a validated REST API with cached server actions on top.
+date: 2026-11-13
+category: guide
+status: published
+tags: [nextjs, prisma, postgres, database, orm]
+recipe: prisma
+---
+
+## What you'll build
+
+By the end, your Next.js app has:
+
+- Prisma 7 talking to your Postgres database through the `pg` driver
+- One shared database client you import as `@/lib/db/prisma`
+- `Post` and `Tag` tables, where a post can have many tags and a tag many posts
+- A REST API at `/api/v1/post` with pagination, search, tag filtering and clear error codes
+- A `/posts` page with four cards to create, read, update and delete posts, whose list is cached until something changes
+
+## Before you start
+
+You need:
+
+- A Next.js 16 app using the App Router
+- A Postgres database and its connection string. Local Docker works, and so does a free hosted one (Neon, Supabase, Railway)
+
+To skip the steps and install it all at once: `npx cnippet-stack init prisma`. It installs the packages, writes the files and runs `prisma generate` for you.
+
+## How it works
+
+Prisma is an **ORM** (object-relational mapper): you describe your tables once in `schema.prisma`, and Prisma generates a TypeScript client from it. Instead of writing SQL, you call `prisma.post.findMany()` and get back typed objects. If you rename a column in the schema, every query that uses the old name stops compiling.
+
+Three pieces work together:
+
+1. **`schema.prisma`** describes the tables.
+2. **`prisma generate`** turns the schema into a client, written into your app at `app/generated/prisma`.
+3. **`prisma migrate dev`** compares the schema with the database and writes the SQL to make them match.
+
+Prisma 7 changed two things you'll see below. Settings like the database URL moved out of the schema into `prisma.config.ts`. And the client no longer ships its own query engine: it talks to Postgres through a **driver adapter**, here the standard `pg` package.
+
+## Step 1: Configure Prisma
+
+<Step id="prisma-setup" />
+
+Install the packages first:
+
+```bash
+npm install @prisma/client @prisma/adapter-pg pg dotenv zod
+npm install -D prisma @types/pg
+```
+
+`prisma.config.ts` tells the Prisma CLI where the schema lives, where to put migrations, and which database to use. It loads `.env` itself through `dotenv`, because the Prisma CLI doesn't read your Next.js env files.
+
+The schema starts nearly empty: a generator and a datasource, no tables yet. The generator's `output` puts the client inside your `app` folder, so you import it with `@/app/generated/prisma/client` like any other file. That folder is generated code, so add it to `.gitignore`.
+
+## Step 2: Create the Prisma client singleton
+
+<Step id="client-singleton" />
+
+Every query goes through one `PrismaClient`, and each client opens its own pool of database connections. In development, Next.js reloads your modules on every save. Without care, each reload would create a new client and a new pool, until Postgres refuses connections.
+
+The fix is to keep the client on `globalThis`, which survives reloads. The first import creates it, and every later import gets the same one. In production there are no reloads, so the global isn't needed there.
+
+In development the client also logs each SQL query to the terminal. It's a quick way to see what your code actually asks the database.
+
+## Step 3: Add the Post and Tag models
+
+<Step id="post-model" />
+
+These models are added to the end of your `schema.prisma`, between two marker comments. The markers let the CLI find the block again, so installing twice doesn't add the tables twice.
+
+`Post` has `tags Tag[]` and `Tag` has `posts Post[]`. Two list fields pointing at each other make a **many-to-many relation**. Prisma creates the hidden join table for you.
+
+A few attributes worth knowing:
+
+- **`@@unique([slug])`** stops two posts from having the same URL slug. The database enforces it, not your code.
+- **`@@index([createdAt])`** makes "newest first" fast once you have many posts.
+- **`@@map("posts")`** keeps the model name `Post` in TypeScript but names the table `posts` in Postgres.
+
+Now create the tables:
+
+```bash
+npx prisma migrate dev --name init
+```
+
+## Step 4: Add Zod validation schemas
+
+<Step id="validation" />
+
+Anything that arrives over HTTP is untrusted: a missing title, a 10,000-character slug, a page number of `-3`. These Zod schemas check every request body and query string before Prisma sees it.
+
+Query strings are always text, so `z.coerce.number()` turns `?page=2` into the number `2`. `updatePostSchema` is the create schema with every field optional, because an update may change one field and leave the rest alone.
+
+## Step 5: Add the CRUD route handlers
+
+<Step id="route-handlers" />
+
+Two route files give you a small REST API:
+
+| Method and path | Does |
+|---|---|
+| `GET /api/v1/post` | Lists posts, with `page`, `limit`, `search`, `tag`, `sortBy` and `sortOrder` |
+| `POST /api/v1/post` | Creates a post and its tags |
+| `GET /api/v1/post/:id` | Returns one post |
+| `PATCH /api/v1/post/:id` | Changes some fields of a post |
+| `DELETE /api/v1/post/:id` | Deletes a post |
+
+The list runs `findMany` and `count` together with `Promise.all`, so the page of posts and the total for the pagination come back in one round trip's time.
+
+`connectOrCreate` on tags reads as: use the tag with this name if it exists, otherwise create it. So sending `tags: ["nextjs"]` works the first time and every time after.
+
+Each handler turns errors into the right status code instead of a generic 500:
+
+- Invalid input from Zod becomes **422** with the problem field by field.
+- Prisma error `P2002` (a unique rule broken, here the slug) becomes **409**.
+- Prisma error `P2025` (record not found) becomes **404**.
+
+Try it with the dev server running:
+
+```bash
+curl -X POST localhost:3000/api/v1/post -H "Content-Type: application/json" -d '{"title":"Hello","slug":"hello","content":"First post","tags":["intro"]}'
+```
+
+## Step 6: Add cached server actions
+
+<Step id="server-actions" />
+
+Set `API_URL` in `.env` to your app's own address, `http://localhost:3000` locally. The actions call the API from step 5 instead of Prisma directly, so the API is the one place that validates input and maps errors.
+
+`fetchPostsAction` is marked `"use cache"`. Next.js keeps its result and serves it again without asking the database. `cacheTag("posts")` labels that cached result, and every action that changes a post calls `revalidateTag("posts")` afterwards, which throws the cached list away. The next read fetches it fresh.
+
+That's why the step also turns on `cacheComponents: true` in `next.config.ts`. Without it, `"use cache"` isn't allowed.
+
+## Step 7: Add the starter CRUD UI
+
+<Step id="starter-ui" />
+
+The `/posts` page has four cards, one per action: create, read, update and delete. They're built from Cnippet UI components. If you're not using the install command, add them with shadcn:
+
+```bash
+npx shadcn add @cnippet/accordion @cnippet/badge @cnippet/button @cnippet/card @cnippet/dialog @cnippet/field @cnippet/form @cnippet/input @cnippet/label @cnippet/spinner @cnippet/textarea @cnippet/toast
+```
+
+Everything lives under `app/posts` and `components/posts`, so it doesn't touch your home page or your other components. When you've seen it work, delete both folders and keep the API and the actions.
+
+## When things go wrong
+
+**"DATABASE_URL is not set"** when the app starts. The variable is missing from `.env`, or the dev server was started before you added it. Add it and restart.
+
+**"Cannot find module '@/app/generated/prisma/client'"**. The client hasn't been generated yet, or `app/generated` was deleted. Run `npx prisma generate`. Run it again after every schema change.
+
+**"The table `public.posts` does not exist in the current database."** The models are in the schema but the migration hasn't run. Run `npx prisma migrate dev --name init`.
+
+**"Failed to parse URL from undefined/api/v1/post"**. `API_URL` isn't set, so the server actions don't know where the API is. Add `API_URL="http://localhost:3000"` to `.env` and restart.
+
+**"A post with this slug already exists"** (409). Another post already uses that slug. Pick a different one.
+
+**"Slug must be lowercase, alphanumeric, and hyphen-separated"** (422). Slugs go into URLs, so they can only hold `a-z`, `0-9` and single hyphens, like `my-first-post`.
+
+**Postgres says "too many clients already"** in development. Something creates a `PrismaClient` outside `lib/db/prisma.ts`. Search for `new PrismaClient` and import the shared one instead.
+
+## Next steps
+
+- Add authentication with the Auth.js guide. It adds its tables to this same schema and reuses this client.
+- Open `npx prisma studio` to browse and edit your data in the browser.
+- Add your own models to `schema.prisma`, then run `npx prisma migrate dev` to create them.
