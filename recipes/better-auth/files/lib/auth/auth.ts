@@ -27,6 +27,12 @@ export const auth = betterAuth({
     cookieCache: { enabled: true, maxAge: 5 * 60 },
   },
   socialProviders: {
+    // #if answers.providers.includes("discord")
+    discord: {
+      clientId: env.DISCORD_CLIENT_ID,
+      clientSecret: env.DISCORD_CLIENT_SECRET,
+    },
+    // #endif
     // #if answers.providers.includes("github")
     github: {
       clientId: env.GITHUB_CLIENT_ID,
@@ -37,12 +43,6 @@ export const auth = betterAuth({
     google: {
       clientId: env.GOOGLE_CLIENT_ID,
       clientSecret: env.GOOGLE_CLIENT_SECRET,
-    },
-    // #endif
-    // #if answers.providers.includes("discord")
-    discord: {
-      clientId: env.DISCORD_CLIENT_ID,
-      clientSecret: env.DISCORD_CLIENT_SECRET,
     },
     // #endif
   },

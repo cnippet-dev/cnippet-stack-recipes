@@ -115,13 +115,17 @@ export function TwoFactorSettings({
       {hasPassword && step === "password" && (
         <CardContent>
           <Field>
-            <FieldLabel htmlFor="2fa-password">Confirm your password</FieldLabel>
+            <FieldLabel htmlFor="2fa-password">
+              Confirm your password
+            </FieldLabel>
             <Input
               autoComplete="current-password"
               autoFocus
               id="2fa-password"
               onChange={(e) => setPassword(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && password && submitPassword()}
+              onKeyDown={(e) =>
+                e.key === "Enter" && password && submitPassword()
+              }
               type="password"
               value={password}
             />

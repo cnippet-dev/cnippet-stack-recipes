@@ -156,7 +156,8 @@ export default {
       files: [create("lib/auth/auth-client.ts")],
       id: "client-instance",
       title: "Create the auth client",
-      verify: "Import `authClient` in a client component: no TypeScript errors.",
+      verify:
+        "Import `authClient` in a client component: no TypeScript errors.",
       why: "The browser side of Better Auth. Its plugins mirror the server's, so authClient.twoFactor and the admin calls are typed.",
     },
     {
