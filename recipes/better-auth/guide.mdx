@@ -1,0 +1,174 @@
+---
+title: Add authentication to Next.js with Better Auth
+description: Email and password, GitHub, Google or Discord sign-in, database sessions in Postgres, admin roles and two-factor codes with Better Auth and Prisma.
+date: 2026-11-13
+category: guide
+status: published
+tags: [nextjs, auth, better-auth, prisma, 2fa]
+recipe: better-auth
+---
+
+## What you'll build
+
+By the end, your Next.js app has:
+
+- Register and sign-in pages with email and password
+- A sign-in button for each OAuth provider you pick: GitHub, Google, Discord, or none
+- Users and sessions stored in your Postgres database through Prisma
+- A `/dashboard` for signed-in users, and an admin page that lists every user, only for admins
+- Two-factor sign-in with an authenticator app, plus backup codes
+- A profile page to turn two-factor on and off, and to connect more sign-in providers
+
+## Before you start
+
+You need:
+
+- A Next.js 16 app using the App Router, with Prisma set up. If it isn't, follow the Prisma guide first: this guide adds its tables to that schema and uses its client at `@/lib/db/prisma`
+- A Postgres database
+- An account with each OAuth provider you want, to create its OAuth app
+- An authenticator app on your phone (Google Authenticator, 1Password, Authy, …) to try two-factor
+
+To skip the steps and install it all at once: `npx cnippet-stack init better-auth`. It installs the Prisma recipe first if it's missing, and asks which OAuth providers you want (GitHub and Google by default) and whether to add the starter pages. The code below shows every option turned on.
+
+## How it works
+
+Better Auth is an auth library that runs inside your app. There's no separate auth service: it stores users in your database and serves its endpoints from one route in your app.
+
+You configure one **server instance** with `betterAuth()`. It gets a database adapter, the ways to sign in, and **plugins** that add features. This guide uses two plugins: `admin` adds a role to each user plus admin-only endpoints, and `twoFactor` adds authenticator-app codes. Each plugin adds its own database columns and its own endpoints.
+
+The browser talks to that server through a **client**, `authClient`. It has the same plugins, so `authClient.twoFactor.enable()` exists and is typed.
+
+Sessions are **database sessions**: when someone signs in, Better Auth writes a row to the `session` table and sets a cookie with its token. Signing out deletes the row, so a stolen cookie stops working right away. To avoid a database query on every request, a signed copy of the session sits in a second cookie for 5 minutes (the **cookie cache**).
+
+## Step 1: Add the auth tables
+
+<Step id="schema-append" />
+
+These models are added to the end of your `schema.prisma`, between two marker comments, so installing twice doesn't add them twice.
+
+They come straight from Better Auth's own generator, `npx auth generate`, for this exact config. `user`, `session`, `account` and `verification` are the core tables. The admin plugin adds `role` and the `banned` fields to `user` and `impersonatedBy` to `session`. The two-factor plugin adds `twoFactorEnabled` and its own `twoFactor` table, which holds each user's secret and backup codes.
+
+An `account` row is one way to sign in. Email and password is an account with `providerId` set to `credential`, and its password hash lives there, not on the user. A GitHub sign-in is another account for the same user.
+
+Create the tables, then regenerate the client:
+
+```bash
+npx prisma migrate dev --name better-auth
+npx prisma generate
+```
+
+## Step 2: Create the auth server
+
+<Step id="server-instance" />
+
+Install the packages first:
+
+```bash
+npm install better-auth@~1.7.22 qrcode.react zod
+```
+
+`lib/auth/env.ts` checks the environment variables with Zod as soon as the server starts. Generate `BETTER_AUTH_SECRET` with `npx auth secret`, and set `BETTER_AUTH_URL` to `http://localhost:3000` locally.
+
+In `auth.ts`, a few settings are worth knowing:
+
+- **`appName`** is the name people see in their authenticator app next to the 6-digit code. Change "My App" to yours.
+- **`emailAndPassword`** sets the password length rules. The forms use the same numbers.
+- **`nextCookies()`** must be the last plugin. It lets Better Auth set cookies when you call it from a server action.
+
+Each OAuth provider is a `clientId` and `clientSecret`. When you create the OAuth app, its callback URL is your `BETTER_AUTH_URL` plus `/api/auth/callback/` and the provider, for example `http://localhost:3000/api/auth/callback/github`.
+
+## Step 3: Mount the route handler
+
+<Step id="route-handler" />
+
+This one file serves every Better Auth endpoint: `/api/auth/sign-up/email`, `/api/auth/sign-in/email`, the OAuth callbacks, the two-factor endpoints and more. The folder must be named `[...all]`, so every path under `/api/auth/` reaches it.
+
+Start the dev server and check it answers:
+
+```bash
+curl localhost:3000/api/auth/ok
+```
+
+## Step 4: Create the auth client
+
+<Step id="client-instance" />
+
+The client calls the endpoints from step 3. It has no `baseURL` because the pages and the API are on the same address. It only needs one when your auth server runs on a different domain.
+
+The client plugins match the server plugins. If you add a plugin to `auth.ts` later, add its client version here too.
+
+## Step 5: Protect routes and check roles
+
+<Step id="route-protection" />
+
+Protection happens in two places:
+
+1. **`proxy.ts`** runs before every request to `/dashboard` and `/profile`. It only checks that a session cookie **exists**, which needs no database. No cookie means a redirect to `/login`.
+2. **`requireUser()` and `requireAdmin()`** in `lib/auth/session.ts` check the **real** session in the page itself. A cookie can be expired, revoked or faked, and only this check catches that.
+
+`getSession` is wrapped in React's `cache()`, so a page that asks for the session several times only looks it up once per request.
+
+`app/api/v1/me/route.ts` shows the same check in a route handler: it returns your user as JSON, or `401` when you're signed out.
+
+<Callout type="warning" title="Check in the page, not only in a layout">
+Next.js renders a layout and its page at the same time. A redirect in the layout doesn't stop the page from running, so a page that loads private data must call `requireUser()` or `requireAdmin()` itself. That's why the admin page checks the role at the top, not in a layout.
+</Callout>
+
+## Step 6: Add the sign-in, register and dashboard pages
+
+<Step id="starter-ui" />
+
+The forms validate their input with Zod, then call `authClient.signUp.email()` or `authClient.signIn.email()` directly. Both return `data` or `error` instead of throwing, and the error message goes into a toast.
+
+Sign-in has one extra case: when the account has two-factor on, the response contains `twoFactorRedirect` instead of a session. The password was right, and the form sends the person to `/two-factor` for their code.
+
+The `(auth)` layout sends people who are already signed in to `/dashboard`. The `(auth)` and `(main)` folder names group pages under a layout without changing their URLs.
+
+Try it: register at `/register`, then open `/dashboard/admin`. It sends you back to `/dashboard`, because new users get the `user` role. To make yourself an admin, open `npx prisma studio`, set `role` to `admin` on your user, then sign out and back in. The admin page now lists every user, through the admin plugin's `listUsers` endpoint, which refuses anyone else.
+
+## Step 7: Add two-factor auth and the profile page
+
+<Step id="two-factor" />
+
+Turning two-factor on takes three steps, and each one has a reason:
+
+1. **Confirm the password.** Someone who borrows your open laptop has your session, but not your password.
+2. **Scan the QR code, then type a code from the app.** Two-factor only switches on once a code proves the scan worked. Otherwise a failed scan would lock you out. The QR code is drawn in the browser, so the secret inside it never goes to an image service.
+3. **Save the backup codes.** Each one signs you in once if you lose your phone. They're shown only this once.
+
+Two-factor needs a password, so the card explains that to accounts that only sign in through GitHub, Google or Discord.
+
+The profile page also lists **connected accounts**. Connecting a provider runs the OAuth flow and adds an `account` row for your user. Disconnecting removes it, but Better Auth refuses to remove your last way to sign in.
+
+Try it: turn two-factor on, sign out, sign back in. After the password you land on `/two-factor`, and the dashboard only opens after a valid code.
+
+## When things go wrong
+
+**"Prisma schema mismatch" with "Missing tables user, session, account, verification, twoFactor"** on the first sign-up. The Prisma Client doesn't know the new tables. Run `npx prisma migrate dev`, then `npx prisma generate`, then restart the dev server. Since Prisma 7, `migrate dev` doesn't regenerate the client for you.
+
+**"BETTER_AUTH_SECRET must be at least 32 characters"**, or another variable name, when the server starts. `lib/auth/env.ts` found a missing or invalid variable in `.env`. Generate a secret with `npx auth secret`.
+
+**"Invalid origin"** (403) on every sign-in. The page's address doesn't match `BETTER_AUTH_URL`, for example `127.0.0.1` against `localhost`, or port 3001 against 3000. Better Auth refuses requests from other addresses so another site can't sign people in. Open the app at the exact `BETTER_AUTH_URL`.
+
+**"Invalid email or password"**. The email isn't registered, the password is wrong, or the account was created with an OAuth provider and has no password. The message is the same in every case on purpose, so nobody can use the form to find out which emails have accounts.
+
+**"User already exists. Use another email."** That email is already registered. Sign in instead.
+
+**"Password too short"**. The server enforces `minPasswordLength` (8) even when a request skips the form.
+
+**"That email is already registered. Sign in with your password, then connect this provider from your profile."** You tried an OAuth provider whose email matches an existing account. Better Auth doesn't merge them automatically. Sign in the usual way and connect the provider from `/profile`.
+
+**"Invalid code"** on `/two-factor`. The code expired (each lasts 30 seconds), or the phone's clock is off. Turn on automatic time on the phone.
+
+**"You can't unlink your last account"**. That provider is the only way this account can sign in. Connect another provider first.
+
+**"You are not allowed to list users"** in the terminal. Something called an admin endpoint for a user without the admin role, usually a page that checks the role in a layout instead of in the page.
+
+**GitHub says the redirect_uri is not associated with this application, or Google or Discord shows redirect_uri_mismatch.** The callback URL in the OAuth app doesn't match `BETTER_AUTH_URL` plus `/api/auth/callback/<provider>`. Check the port and `http` against `https`.
+
+## Next steps
+
+- Send verification and password-reset emails: the Resend guide sets up sending, and Better Auth's `sendVerificationEmail` and `sendResetPassword` options call it.
+- Better Auth rate-limits sign-in attempts in production on its own. If you run several servers, give it shared storage with the `rateLimit.storage` option, so they share the counts.
+- Look at Better Auth's other plugins, such as passkeys and magic links.
+- Use the admin plugin's other endpoints to ban users, change roles and impersonate a user for support.
