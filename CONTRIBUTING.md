@@ -312,6 +312,40 @@ bun run compose <name> --build
 bun run compose <name> --through <step-id> --typecheck
 bun run compose <name> --host app-router-src --build        # one host only, faster
 
+# Pro add-on (CNIPPET_EXTRA_ROOTS = the Pro repo; see section 10)
+bun run recipe new <name> --pro
+bun run recipe pull <name> --pro --from <app> <paths...> --write
+bun run recipe check <name> --pro
+bun run recipe guide <name> --pro
+
 # clean up composed test apps
 rm -rf .compose
 ```
+
+---
+
+## 10. Pro add-ons
+
+A Pro add-on adds production extras on top of a free recipe (its **base**). It lives in the private
+`cnippet-stack-recipes-pro` repo, in a folder with the base's name. Format and rules:
+[`docs/recipe-format.md`](./docs/recipe-format.md), section 10.
+
+The Pro repo has this repo as its `free/` submodule and runs these same scripts with `CNIPPET_EXTRA_ROOTS` set to
+itself. To work on an add-on from here instead, set it by hand:
+
+```bash
+export CNIPPET_EXTRA_ROOTS=../cnippet-stack-recipes-pro    # PowerShell: $env:CNIPPET_EXTRA_ROOTS="..\cnippet-stack-recipes-pro"
+```
+
+The flow is the same as a free recipe, with `--pro`:
+
+1. `recipe new <name> --pro`: an add-on skeleton in the Pro repo, plus a build app (`../build/<name>-pro`) that
+   already has the base installed.
+2. Build the Pro part in that app.
+3. `recipe pull <name> --pro --from <app> <paths...> --write`: compares each file with the base app. A new file is
+   copied. A changed base file is copied and needs `replaces: true`. An unchanged one is skipped. Don't pull a file
+   the base appends to (like `prisma/schema.prisma`); write an append fragment with `cnippet:<name>-pro` markers.
+4. Fill in the TODOs, then `recipe check <name> --pro`. It also builds the upgrade path: the base first, then the add-on.
+5. `recipe guide <name> --pro` for the Pro guide ([`docs/writing-guides.md`](./docs/writing-guides.md), section 6).
+
+If an add-on needs to change a base step, change the base so Pro can plug in. Add-ons only add.

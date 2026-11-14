@@ -98,3 +98,11 @@ Related recipes and guides.
 
 `tier` in `recipe.config.ts` decides both. A pro guide is only shown to readers with a Stack Pro licence,
 the same licence that unlocks pro recipes in the CLI. Pro guides live in the private pro repo, next to their code.
+
+A recipe with a **Pro add-on** has two guides. The free one, here, covers the base steps. The Pro one,
+`guide.mdx` in the add-on's folder, starts where the free one ends:
+
+- Its frontmatter has `part: "pro"` (and the same `recipe: <name>`). A free guide never has `part`.
+- It has a `<Step id>` for each **add-on** step, once. Base steps belong to the free guide.
+- Open with what the reader already has after the free guide, then what Pro adds. Don't repeat the free steps.
+- `bun run recipe guide <name> --pro` writes the skeleton.

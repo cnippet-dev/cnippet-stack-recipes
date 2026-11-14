@@ -8,16 +8,15 @@
 // hosts/<host>/**    → every recipe that declares that host (no dependents)
 // anything shared    → every recipe (see SHARED)
 // anything else      → nothing (demos, docs, other workflows)
-import { existsSync, readdirSync, statSync } from "node:fs";
-import { join, resolve } from "node:path";
-import { pathToFileURL } from "node:url";
+//
+// --pro: only recipes that have a Pro add-on (CNIPPET_EXTRA_ROOTS), for the Pro
+// repo's CI. A base and its add-on share a name, so a change to either selects it.
 import { RecipeManifest } from "@cnippet/recipe-kit";
-
-const ROOT = resolve(import.meta.dir, "..");
-const RECIPES_DIR = join(ROOT, "recipes");
+import { listRecipeDirs, readConfig } from "./lib/roots";
 
 // Paths that can change how every recipe composes or builds.
 const SHARED = [
+  /^free$/, // the Pro repo's submodule of this repo: every base may have changed
   /^scripts\//,
   /^packages\//,
   /^package\.json$/,
@@ -26,18 +25,22 @@ const SHARED = [
   /^\.github\/workflows\/(ci|recipes)\.yml$/,
 ];
 
+const pro = process.argv.includes("--pro");
+const entries = await listRecipeDirs();
+const addons = new Set(
+  entries.filter((e) => e.kind === "addon").map((e) => e.name),
+);
+const bases = entries.filter((e) => e.kind === "recipe");
 const listRecipes = (): string[] =>
-  readdirSync(RECIPES_DIR)
-    .filter((entry) => statSync(join(RECIPES_DIR, entry)).isDirectory())
-    .filter((entry) => existsSync(join(RECIPES_DIR, entry, "recipe.config.ts")))
+  bases
+    .map((e) => e.name)
+    .filter((name) => !pro || addons.has(name))
     .sort();
 
-async function loadConfigs(names: string[]) {
+async function loadConfigs() {
   const configs = new Map<string, RecipeManifest>();
-  for (const name of names) {
-    const path = join(RECIPES_DIR, name, "recipe.config.ts");
-    const mod = await import(pathToFileURL(path).href);
-    configs.set(name, RecipeManifest.parse(mod.default));
+  for (const { dir, name } of bases) {
+    configs.set(name, RecipeManifest.parse(await readConfig(dir)));
   }
   return configs;
 }
@@ -46,7 +49,7 @@ async function select(paths: string[]): Promise<string[]> {
   const all = listRecipes();
   if (paths.some((path) => SHARED.some((re) => re.test(path)))) return all;
 
-  const configs = await loadConfigs(all);
+  const configs = await loadConfigs();
   const selected = new Set<string>();
 
   for (const path of paths) {

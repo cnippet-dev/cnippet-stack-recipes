@@ -1,20 +1,26 @@
 // Validates every recipes/<name>/recipe.config.ts (or only the names passed as
 // arguments). Usage: bun run validate-recipes [name ...]
+// Pro add-ons in CNIPPET_EXTRA_ROOTS are validated too (see lib/roots), each
+// against its base: a name selects both.
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { join, posix, relative, resolve } from "node:path";
-import { pathToFileURL } from "node:url";
-import { RecipeManifest, resolveTarget } from "@cnippet/recipe-kit";
-
-const ROOT = resolve(import.meta.dir, "..");
-const RECIPES_DIR = join(ROOT, "recipes");
-const HOSTS_DIR = join(ROOT, "hosts");
-
-const listDirs = (dir: string): string[] =>
-  existsSync(dir)
-    ? readdirSync(dir).filter((entry) =>
-        statSync(join(dir, entry)).isDirectory(),
-      )
-    : [];
+import { join, posix, relative } from "node:path";
+import {
+  addonMarker,
+  mergeAddon,
+  RecipeAddon,
+  RecipeManifest,
+  resolveTarget,
+  type Step,
+} from "@cnippet/recipe-kit";
+import {
+  findRecipeDir,
+  hostDir,
+  listHosts,
+  listRecipeDirs,
+  loadBase,
+  type RecipeDir,
+  readConfig,
+} from "./lib/roots";
 
 const countSentences = (text: string): number =>
   text.split(/[.!?](\s|$)/).filter((part) => part.trim().length > 0).length;
@@ -73,6 +79,7 @@ function validateGuide(
   guidePath: string,
   name: string,
   stepIds: string[],
+  pro: boolean,
 ): string[] {
   const errors: string[] = [];
   const text = readFileSync(guidePath, "utf8").replaceAll("\r\n", "\n");
@@ -123,6 +130,13 @@ function validateGuide(
   if (fields.get("recipe") !== name) {
     errors.push(`guide.mdx: frontmatter recipe must be "${name}"`);
   }
+  // The Pro guide covers the add-on steps only; next.cnippet.dev keys on `part`.
+  if (pro && fields.get("part") !== "pro") {
+    errors.push('guide.mdx: a Pro guide needs frontmatter part: "pro"');
+  }
+  if (!pro && fields.has("part")) {
+    errors.push("guide.mdx: `part` is only for Pro guides");
+  }
 
   const counts = new Map<string, number>();
   for (const [, id] of text.matchAll(STEP_TAG)) {
@@ -161,12 +175,16 @@ function validateGuide(
 }
 
 async function loadConfig(name: string): Promise<RecipeManifest | undefined> {
-  const configPath = join(RECIPES_DIR, name, "recipe.config.ts");
-  if (!existsSync(configPath)) return undefined;
-  const mod = await import(pathToFileURL(configPath).href);
-  const parsed = RecipeManifest.safeParse(mod.default);
+  const dir = await findRecipeDir(name, "recipe");
+  if (!dir) return undefined;
+  const parsed = RecipeManifest.safeParse(await readConfig(dir));
   return parsed.success ? parsed.data : undefined;
 }
+
+const formatIssues = (issues: { path: PropertyKey[]; message: string }[]) =>
+  issues.map(
+    (issue) => `${issue.path.join(".") || "(root)"}: ${issue.message}`,
+  );
 
 // `create` targets of every recipe this one requires, directly or not. Two
 // recipes creating the same file means the second install silently skips it.
@@ -193,34 +211,78 @@ async function requiredCreateTargets(
 }
 
 async function validateRecipe(
-  name: string,
+  { dir: recipeDir, kind, name }: RecipeDir,
   allRecipes: Set<string>,
   hosts: Set<string>,
 ): Promise<string[]> {
   const errors: string[] = [];
-  const recipeDir = join(RECIPES_DIR, name);
-  const configPath = join(recipeDir, "recipe.config.ts");
   const filesDir = join(recipeDir, "files");
 
-  if (!existsSync(configPath)) return ["missing recipe.config.ts"];
   if (!existsSync(filesDir)) errors.push("missing files/ directory");
   if (existsSync(join(recipeDir, "package.json"))) {
     errors.push("recipes must not have a package.json");
   }
 
-  const mod = await import(pathToFileURL(configPath).href);
-  const parsed = RecipeManifest.safeParse(mod.default);
-  if (!parsed.success) {
-    return [
-      ...errors,
-      ...parsed.error.issues.map(
-        (issue) => `${issue.path.join(".") || "(root)"}: ${issue.message}`,
-      ),
-    ];
+  const raw = await readConfig(recipeDir);
+  // `config` is what the user installs (merged for an add-on); `ownSteps`,
+  // `ownComponents` and `marker` are this folder's own part.
+  let config: RecipeManifest;
+  let ownSteps: Step[];
+  let ownComponents: string[] | undefined;
+  let marker = name;
+  // An add-on file with one of these targets replaces the base's file.
+  const baseCreates = new Set<string>();
+  if (kind === "addon") {
+    const parsed = RecipeAddon.safeParse(raw);
+    if (!parsed.success)
+      return [...errors, ...formatIssues(parsed.error.issues)];
+    const addon = parsed.data;
+    if (addon.name !== name || addon.extends !== name) {
+      return [
+        ...errors,
+        `name "${addon.name}" and extends "${addon.extends}" must both equal folder name "${name}"`,
+      ];
+    }
+    let base: RecipeManifest;
+    try {
+      base = (await loadBase(name)).manifest;
+    } catch {
+      return [...errors, `extends "${name}": no base recipe with that name`];
+    }
+    try {
+      config = mergeAddon(base, addon).manifest;
+    } catch (error) {
+      return [...errors, (error as Error).message];
+    }
+    for (const step of base.steps) {
+      for (const file of step.files) {
+        if (file.strategy === "create") baseCreates.add(file.target);
+      }
+    }
+    ownSteps = addon.steps;
+    ownComponents = addon.cnippetUiComponents;
+    marker = addonMarker(name);
+  } else {
+    const parsed = RecipeManifest.safeParse(raw);
+    if (!parsed.success)
+      return [...errors, ...formatIssues(parsed.error.issues)];
+    config = parsed.data;
+    ownSteps = config.steps;
+    ownComponents = config.cnippetUiComponents;
+    if (config.name !== name) {
+      errors.push(`name "${config.name}" must equal folder name "${name}"`);
+    }
+    for (const host of config.hosts) {
+      if (!hosts.has(host)) errors.push(`hosts: unknown host "${host}"`);
+    }
+    if (config.steps.length < 3 && !config.thin) {
+      errors.push(
+        `only ${config.steps.length} step(s); mark the recipe \`thin: true\` or split it into 3+ steps`,
+      );
+    }
   }
-  const config = parsed.data;
 
-  for (const path of todoPaths(mod.default)) {
+  for (const path of todoPaths(raw)) {
     errors.push(`${path}: still a TODO — fill it in`);
   }
   const guidePath = join(recipeDir, "guide.mdx");
@@ -229,31 +291,21 @@ async function validateRecipe(
       ...validateGuide(
         guidePath,
         name,
-        config.steps.map((s) => s.id),
+        ownSteps.map((s) => s.id),
+        kind === "addon",
       ),
     );
   }
 
-  if (config.name !== name) {
-    errors.push(`name "${config.name}" must equal folder name "${name}"`);
-  }
-  for (const host of config.hosts) {
-    if (!hosts.has(host)) errors.push(`hosts: unknown host "${host}"`);
-  }
   for (const required of config.requires) {
     if (!allRecipes.has(required)) {
       errors.push(`requires: unknown recipe "${required}"`);
     }
   }
-  if (config.steps.length < 3 && !config.thin) {
-    errors.push(
-      `only ${config.steps.length} step(s); mark the recipe \`thin: true\` or split it into 3+ steps`,
-    );
-  }
 
   const requiredTargets = await requiredCreateTargets(config);
   const seenIds = new Set<string>();
-  for (const step of config.steps) {
+  for (const step of ownSteps) {
     const where = `step "${step.id}"`;
     if (seenIds.has(step.id)) errors.push(`${where}: duplicate step id`);
     seenIds.add(step.id);
@@ -279,14 +331,20 @@ async function validateRecipe(
           `${where}: ${file.target} is also created by required recipe "${owner}"`,
         );
       }
-      if (file.strategy === "create") {
+      if (file.strategy === "create" && baseCreates.has(file.target)) {
+        if (!file.replaces) {
+          errors.push(
+            `${where}: ${file.target} is also created by the base — set \`replaces: true\``,
+          );
+        }
+      } else if (file.strategy === "create") {
         for (const host of config.hosts.filter((h) => hosts.has(h))) {
-          const hostDir = join(HOSTS_DIR, host);
+          const dir = hostDir(host);
           const target = resolveTarget(
             file.target,
-            existsSync(join(hostDir, "src", "app")),
+            existsSync(join(dir, "src", "app")),
           );
-          const exists = existsSync(join(hostDir, target));
+          const exists = existsSync(join(dir, target));
           if (exists && !file.replaces) {
             errors.push(
               `${where}: ${target} already exists in host "${host}" — set \`replaces: true\``,
@@ -300,10 +358,10 @@ async function validateRecipe(
       }
       if (file.strategy === "append") {
         const contents = readFileSync(sourcePath, "utf8");
-        for (const marker of [`>>> cnippet:${name}`, `<<< cnippet:${name}`]) {
-          if (!contents.includes(marker)) {
+        for (const tag of [`>>> cnippet:${marker}`, `<<< cnippet:${marker}`]) {
+          if (!contents.includes(tag)) {
             errors.push(
-              `${where}: append source "${file.source}" is missing marker "${marker}"`,
+              `${where}: append source "${file.source}" is missing marker "${tag}"`,
             );
           }
         }
@@ -325,10 +383,12 @@ async function validateRecipe(
         }
       }
     }
-    const declared = new Set(config.cnippetUiComponents ?? []);
+    // An add-on may import components its base declares, but must use its own.
+    const available = new Set(config.cnippetUiComponents ?? []);
+    const declared = new Set(ownComponents ?? []);
     const used = importedUiComponents(filesDir);
     for (const component of used) {
-      if (!declared.has(component)) {
+      if (!available.has(component)) {
         errors.push(
           `cnippetUiComponents: "${component}" is imported but not declared`,
         );
@@ -347,31 +407,39 @@ async function validateRecipe(
 }
 
 async function main() {
-  const allRecipes = new Set(listDirs(RECIPES_DIR));
-  const hosts = new Set(listDirs(HOSTS_DIR));
+  const entries = await listRecipeDirs();
+  const allRecipes = new Set(
+    entries.filter((e) => e.kind === "recipe").map((e) => e.name),
+  );
+  const hosts = new Set(listHosts());
   const requested = process.argv.slice(2);
 
   for (const name of requested) {
-    if (!allRecipes.has(name)) {
+    if (!entries.some((e) => e.name === name)) {
       console.error(`✗ ${name}: no such recipe in recipes/`);
       process.exit(1);
     }
   }
 
-  const names = requested.length > 0 ? requested : [...allRecipes].sort();
+  const selected = requested.length
+    ? entries.filter((e) => requested.includes(e.name))
+    : entries;
   let failed = 0;
-  for (const name of names) {
-    const errors = await validateRecipe(name, allRecipes, hosts);
+  for (const entry of selected) {
+    const label = entry.kind === "addon" ? `${entry.name} (pro)` : entry.name;
+    const errors = await validateRecipe(entry, allRecipes, hosts);
     if (errors.length === 0) {
-      console.log(`✓ ${name}`);
+      console.log(`✓ ${label}`);
     } else {
       failed++;
-      console.error(`✗ ${name}`);
+      console.error(`✗ ${label}`);
       for (const error of errors) console.error(`    ${error}`);
     }
   }
 
-  console.log(`\n${names.length - failed}/${names.length} recipe(s) valid`);
+  console.log(
+    `\n${selected.length - failed}/${selected.length} recipe(s) valid`,
+  );
   if (failed > 0) process.exit(1);
 }
 

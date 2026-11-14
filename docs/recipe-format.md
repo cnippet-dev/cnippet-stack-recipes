@@ -253,7 +253,7 @@ Hosts hold nothing recipe-specific. Need a new host (e.g. `with-drizzle`)? Open 
 
 ---
 
-## 10. Pro add-ons (format only, tools coming)
+## 10. Pro add-ons
 
 A recipe can have a **Pro add-on**: a folder with the same name in the private `cnippet-stack-recipes-pro` repo whose
 `recipe.config.ts` has `extends: "<name>"`. It only adds to the free recipe (the "base"). Installing Pro = the base's
@@ -272,5 +272,12 @@ Rules:
 - Append files use `// >>> cnippet:<name>-pro` / `// <<< cnippet:<name>-pro` markers.
 - Pro can't remove or edit a base step. If it needs to, change the base so Pro can plug in.
 
-`compose --pro`, `recipe new --pro` and `recipe check --pro` come in a later change. Until then, nobody needs to
-write an add-on.
+- An add-on file may import `cnippetUiComponents` the base declares. It declares only the extra ones it uses.
+
+The scripts find add-ons through `CNIPPET_EXTRA_ROOTS`: a list of repo folders (`;` on Windows, `:` elsewhere) whose
+`recipes/` are searched next to this repo's. The Pro repo sets it to itself. With it set:
+
+- `compose <name> --pro` composes base + add-on. `--pro --upgrade` composes the base, then only the add-on on top,
+  the way `init --pro` upgrades an app that already has Free.
+- `validate-recipes` and `check-coverage` also check the add-on, against its base.
+- `recipe new|pull|check|guide <name> --pro` work on the add-on. See CONTRIBUTING, section 10.
