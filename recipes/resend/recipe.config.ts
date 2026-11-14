@@ -132,8 +132,8 @@ export default {
       why: "Resend tells you what happened after the send: delivered, bounced or marked as spam. It reads the raw body because re-serialising JSON breaks the signature.",
     },
   ],
-  supports: { next: ["16"], orm: ["none"], router: ["app"] },
+  supports: { next: ["16"], orm: ["none", "prisma"], router: ["app"] },
   tier: "free",
   title: "Resend Email Integration",
-  version: "0.1.0",
+  version: "0.1.1",
 } satisfies RecipeManifestInput;
