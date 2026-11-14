@@ -28,6 +28,12 @@
 // envVars (names from `process.env.X`, description left as a TODO) and
 // `replaces: true` on host files. It only adds, never removes or rewrites.
 // Env vars a library reads on its own (Auth.js `AUTH_GITHUB_ID`) aren't found.
+//
+// --pro pulls into the recipe's Pro add-on (CNIPPET_EXTRA_ROOTS, see lib/roots)
+// from an app built on top of the base (`recipe new <name> --pro` makes one).
+// The base is composed for the app's layout and each file compared with it:
+// a file the base app doesn't have is new, one that differs becomes a create
+// with `replaces: true`, and one that's unchanged is skipped.
 import { spawnSync } from "node:child_process";
 import {
   existsSync,
@@ -42,8 +48,8 @@ import { pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
 import { RecipeManifest, resolveTarget } from "@cnippet/recipe-kit";
 import { addToConfig, type ConfigAdditions } from "./lib/edit-config";
+import { hostDir, loadPro, ROOT } from "./lib/roots";
 
-const ROOT = resolve(import.meta.dir, "..");
 const DEFAULT_HOSTS = ["app-router-src", "app-router-no-src"];
 
 // Never belong in files/, whatever the app has.
@@ -141,7 +147,7 @@ function pullsFromPaths(appDir: string, srcDir: boolean, paths: string[]) {
 function pullsFromConfig(
   appDir: string,
   srcDir: boolean,
-  config: RecipeManifest,
+  config: Pick<RecipeManifest, "steps">,
 ) {
   const pulls: Pull[] = [];
   const errors: string[] = [];
@@ -223,26 +229,38 @@ function recipeImports(contents: string, recipeFiles: Set<string>): string[] {
   return found;
 }
 
-// Paths under recipes/<name>/files/ with uncommitted changes, tracked or not.
+// Sources under files/ with uncommitted changes, tracked or not. Run from
+// files/ itself, so it works in whichever repo the recipe lives in.
 function dirtyPaths(filesDir: string): Set<string> {
+  if (!existsSync(filesDir)) return new Set();
   const result = spawnSync(
     "git",
-    [
-      "status",
-      "--porcelain",
-      "--untracked-files=all",
-      "--",
-      relative(ROOT, filesDir),
-    ],
-    { cwd: ROOT, encoding: "utf8" },
+    ["ls-files", "--modified", "--others", "--exclude-standard"],
+    { cwd: filesDir, encoding: "utf8" },
   );
-  if (result.status !== 0) throw new Error("git status failed");
-  return new Set(
-    result.stdout
-      .split("\n")
-      .filter(Boolean)
-      .map((line) => line.slice(3).replace(/^"|"$/g, "")),
+  if (result.status !== 0)
+    throw new Error(`git ls-files failed in ${filesDir}`);
+  return new Set(result.stdout.split("\n").filter(Boolean));
+}
+
+// The base composed into a host with the app's layout: what the author's
+// Pro build app looked like before they added the Pro code.
+function composeBase(name: string, hosts: string[], srcDir: boolean): string {
+  const host = hosts.find(
+    (h) => existsSync(join(hostDir(h), "src", "app")) === srcDir,
   );
+  if (!host) {
+    throw new Error(
+      `${name} has no host with ${srcDir ? "a" : "no"} src/ layout to compare against`,
+    );
+  }
+  const { status } = spawnSync(
+    "bun",
+    ["scripts/compose.ts", name, "--host", host],
+    { cwd: ROOT, stdio: "ignore" },
+  );
+  if (status !== 0) throw new Error(`composing the ${name} base failed`);
+  return join(ROOT, ".compose", name, host);
 }
 
 async function main() {
@@ -252,13 +270,14 @@ async function main() {
       diff: { type: "boolean" },
       force: { type: "boolean" },
       from: { type: "string" },
+      pro: { type: "boolean" },
       write: { type: "boolean" },
     },
   });
   const [name, ...paths] = positionals;
   if (!name || !values.from) {
     console.error(
-      "usage: bun run pull-recipe <recipe> --from <app-dir> [<path> ...] [--write] [--force] [--diff]",
+      "usage: bun run pull-recipe <recipe> [--pro] --from <app-dir> [<path> ...] [--write] [--force] [--diff]",
     );
     process.exit(1);
   }
@@ -275,7 +294,19 @@ async function main() {
     throw new Error(`${appDir} has neither app/ nor src/app/`);
   }
 
-  const config = await loadConfig(name);
+  // For --pro, `config` is the merged recipe with only the add-on's steps:
+  // files are claimed by add-on steps, while anything the base already declares
+  // (components, deps, env vars) isn't suggested again.
+  let config: RecipeManifest | undefined;
+  let recipeDir = join(ROOT, "recipes", name);
+  if (values.pro) {
+    const loaded = await loadPro(name);
+    config = { ...loaded.pro.manifest, steps: loaded.pro.addon.steps };
+    recipeDir = loaded.addonDir;
+  } else {
+    config = await loadConfig(name);
+  }
+  const recipeLabel = toPosix(relative(ROOT, recipeDir));
   const errors: string[] = [];
   let pulls: Pull[];
   if (paths.length > 0) {
@@ -298,11 +329,31 @@ async function main() {
     if (refused) errors.push(`${pull.source}: refused — ${refused[1]}`);
     return !refused;
   });
-  const filesDir = join(ROOT, "recipes", name, "files");
+  const filesDir = join(recipeDir, "files");
   const hosts = config?.hosts ?? DEFAULT_HOSTS;
+  // Source → why it's a create with `replaces: true`.
+  const replacing = new Map<string, string>();
+
+  if (values.pro) {
+    const baseApp = composeBase(name, hosts, srcDir);
+    pulls = pulls.filter((pull) => {
+      const inBase = join(baseApp, relative(appDir, pull.from));
+      if (!existsSync(inBase)) return true;
+      if (
+        normalize(readFileSync(inBase, "utf8")) ===
+        normalize(readFileSync(pull.from, "utf8"))
+      ) {
+        console.log(`  – skipped ${pull.source} (unchanged from the base)`);
+        return false;
+      }
+      replacing.set(pull.source, "changes the base app's file");
+      return true;
+    });
+  }
 
   // Host files: pull the ones that use recipe code, refuse the boilerplate.
-  const hostOwned = hostFiles(hosts);
+  // (--pro already sorted these out against the base app.)
+  const hostOwned = values.pro ? new Set<string>() : hostFiles(hosts);
   const recipeFiles = new Set(
     [
       ...pulls.map((p) => p.source),
@@ -311,7 +362,6 @@ async function main() {
         : []),
     ].filter((source) => !hostOwned.has(source)),
   );
-  const replacing = new Map<string, string[]>();
   for (const source of hostOwned) {
     if (!CODE_FILE.test(source) || pulls.some((p) => p.source === source)) {
       continue;
@@ -335,7 +385,10 @@ async function main() {
       );
       return false;
     }
-    replacing.set(pull.source, used);
+    replacing.set(
+      pull.source,
+      `replaces the host's file — uses ${used.join(", ")}`,
+    );
     return true;
   });
 
@@ -345,7 +398,7 @@ async function main() {
   );
 
   console.log(
-    `${name} ← ${appDir} (${srcDir ? "src/" : "no src/"} layout)${values.write ? "" : " — dry run"}\n`,
+    `${recipeLabel} ← ${appDir} (${srcDir ? "src/" : "no src/"} layout)${values.write ? "" : " — dry run"}\n`,
   );
 
   const dirty = dirtyPaths(filesDir);
@@ -384,9 +437,8 @@ async function main() {
       }
     }
 
-    const repoPath = toPosix(relative(ROOT, dest));
     let mark = { changed: "~", new: "+", same: "=" }[status];
-    if (status === "changed" && dirty.has(repoPath) && !values.force) {
+    if (status === "changed" && dirty.has(pull.source) && !values.force) {
       errors.push(
         `${pull.source}: has uncommitted changes in the recipe — commit them or pass --force`,
       );
@@ -394,10 +446,8 @@ async function main() {
     } else if (status !== "same") {
       writes.push({ contents, pull, status });
     }
-    const uses = replacing.get(pull.source);
-    console.log(
-      `  ${mark} ${pull.source}${uses ? `  (replaces the host's file — uses ${uses.join(", ")})` : ""}`,
-    );
+    const why = replacing.get(pull.source);
+    console.log(`  ${mark} ${pull.source}${why ? `  (${why})` : ""}`);
 
     if (values.diff && status === "changed") {
       spawnSync("git", ["diff", "--no-index", "--", dest, pull.from], {
@@ -508,12 +558,12 @@ async function main() {
     writeFileSync(dest, contents);
   }
   console.log(
-    `\n✓ wrote ${counts.new} new, ${counts.changed} changed into recipes/${name}/files/`,
+    `\n✓ wrote ${counts.new} new, ${counts.changed} changed into ${recipeLabel}/files/`,
   );
   if (config && found.length) {
-    const configPath = join(ROOT, "recipes", name, "recipe.config.ts");
+    const configPath = join(recipeDir, "recipe.config.ts");
     const skipped = addToConfig(configPath, additions);
-    console.log(`✓ updated recipes/${name}/recipe.config.ts`);
+    console.log(`✓ updated ${recipeLabel}/recipe.config.ts`);
     for (const line of skipped) console.warn(`⚠ ${line}`);
     if (additions.envVars.length) {
       console.log(
@@ -527,7 +577,7 @@ async function main() {
     );
   else
     console.log(
-      `next: bun run validate-recipes ${name} && bun run check-coverage ${name}`,
+      `next: bun run recipe check ${name}${values.pro ? " --pro" : ""}`,
     );
 }
 
