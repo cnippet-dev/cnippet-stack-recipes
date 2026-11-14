@@ -1,7 +1,9 @@
 // Composes a recipe into a fresh copy of each host it declares, so CI (and
 // you) can build it. Usage:
-//   bun run compose <recipe> [--host <host>] [--through <step-id>] [--answers <json>] [--build | --typecheck]
-// Output: .compose/<recipe>/<host>/. `--through` stops after that step (the
+//   bun run compose <recipe> [--pro [--upgrade]] [--host <host>] [--through <step-id>] [--answers <json>] [--build | --typecheck]
+// Output: .compose/<recipe>[-pro|-upgrade]/<host>/. `--pro` composes base +
+// add-on merged (the add-on is found via CNIPPET_EXTRA_ROOTS, see lib/roots);
+// `--pro --upgrade` composes the base, then only the add-on steps on top. `--through` stops after that step (the
 // partial-install rule); `--build` then installs, runs shadcn + postInstall,
 // and runs `next build` + `tsc --noEmit`. `--typecheck` skips `next build`.
 // `--answers '{"starterUi":false}'` overrides the all-on answers of <recipe>
@@ -17,21 +19,21 @@ import {
   writeFileSync,
 } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
-import { pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
 import {
+  addonMarker,
   evaluateWhen,
   type Prompt,
-  RecipeManifest,
+  type RecipeManifest,
   renderFiles,
   resolveTarget,
   type Step,
+  type StepSource,
   type WhenScope,
 } from "@cnippet/recipe-kit";
 import { applyAstInject } from "./lib/ast-inject";
 import { copyHost } from "./lib/host";
-
-const ROOT = resolve(import.meta.dir, "..");
+import { hostDir as hostPath, loadBase, loadPro, ROOT } from "./lib/roots";
 
 type PackageJson = {
   name: string;
@@ -39,13 +41,6 @@ type PackageJson = {
   devDependencies?: Record<string, string>;
   trustedDependencies?: string[];
 };
-
-async function loadRecipe(name: string): Promise<RecipeManifest> {
-  const configPath = join(ROOT, "recipes", name, "recipe.config.ts");
-  if (!existsSync(configPath)) throw new Error(`no such recipe: ${name}`);
-  const mod = await import(pathToFileURL(configPath).href);
-  return RecipeManifest.parse(mod.default);
-}
 
 // "All branches on": the maximal config, so CI tests the most code.
 function maximalAnswers(prompts: Prompt[]): Record<string, unknown> {
@@ -93,13 +88,46 @@ let answerOverrides: { recipe: string; values: Record<string, unknown> } = {
 
 type Applied = Map<string, { config: RecipeManifest; steps: Step[] }>;
 
+// free: the base. pro: base + add-on merged. upgrade: the base, then only the
+// add-on's steps, deps, env vars and gitignore on top (what `init --pro` adds
+// to an app that already has Free).
+type Variant = "free" | "pro" | "upgrade";
+
 async function applyRecipe(
   name: string,
   dest: string,
   applied: Applied,
   through?: string,
+  variant: Variant = "free",
 ): Promise<void> {
-  const config = await loadRecipe(name);
+  let config: RecipeManifest;
+  let source: string | ((step: Step) => StepSource);
+  let key = name;
+  if (variant === "free") {
+    const base = await loadBase(name);
+    config = base.manifest;
+    source = base.dir;
+  } else {
+    const loaded = await loadPro(name);
+    source = loaded.source;
+    config = loaded.pro.manifest;
+    if (variant === "upgrade") {
+      if (!applied.has(name)) await applyRecipe(name, dest, applied);
+      const { addon } = loaded.pro;
+      config = {
+        ...config,
+        cnippetUiComponents: addon.cnippetUiComponents,
+        dependencies: addon.dependencies,
+        devDependencies: addon.devDependencies,
+        envVars: addon.envVars,
+        gitignore: addon.gitignore,
+        requires: addon.requires,
+        steps: addon.steps,
+        trustedBuildScripts: addon.trustedBuildScripts,
+      };
+      key = addonMarker(name);
+    }
+  }
   const detection = detect(dest);
 
   for (const required of config.requires) {
@@ -121,8 +149,7 @@ async function applyRecipe(
     ...(name === answerOverrides.recipe ? answerOverrides.values : {}),
   };
   const scope: WhenScope = { answers, detection };
-  const recipeDir = join(ROOT, "recipes", name);
-  const files = renderFiles(config, recipeDir, scope, through);
+  const files = renderFiles(config, source, scope, through);
   const steps = through
     ? config.steps.slice(0, config.steps.findIndex((s) => s.id === through) + 1)
     : config.steps;
@@ -147,8 +174,9 @@ async function applyRecipe(
         writeFileSync(targetPath, contents);
         break;
       case "append": {
-        // Same markers the CLI's append strategy writes.
-        const block = `// >>> cnippet:${name}\n${contents.trimEnd()}\n// <<< cnippet:${name}\n`;
+        // Same markers the CLI's append strategy writes; add-on files use `<name>-pro`.
+        const marker = file.marker ?? name;
+        const block = `// >>> cnippet:${marker}\n${contents.trimEnd()}\n// <<< cnippet:${marker}\n`;
         mkdirSync(dirname(targetPath), { recursive: true });
         appendFileSync(
           targetPath,
@@ -192,7 +220,7 @@ async function applyRecipe(
   if (config.gitignore?.length) {
     appendFileSync(
       join(dest, ".gitignore"),
-      `\n# cnippet:${name}\n${config.gitignore
+      `\n# cnippet:${key}\n${config.gitignore
         .map((entry) => resolveTarget(entry, detection.srcDir))
         .join("\n")}\n`,
     );
@@ -212,7 +240,7 @@ async function applyRecipe(
     });
   if (env.length) appendFileSync(join(dest, ".env"), `${env.join("\n")}\n`);
 
-  applied.set(name, { config, steps });
+  applied.set(key, { config, steps });
 }
 
 // `attempts` > 1 only for commands that hit the network and fail transiently.
@@ -273,40 +301,61 @@ async function main() {
       answers: { type: "string" },
       build: { type: "boolean" },
       host: { type: "string" },
+      // Compose into this dir instead of .compose/ (one host only; must not exist).
+      out: { type: "string" },
+      pro: { type: "boolean" },
       through: { type: "string" },
       typecheck: { type: "boolean" },
+      upgrade: { type: "boolean" },
     },
   });
   const [name] = positionals;
   if (!name) {
     console.error(
-      "usage: bun run compose <recipe> [--host <host>] [--through <step-id>] [--answers <json>] [--build | --typecheck]",
+      "usage: bun run compose <recipe> [--pro [--upgrade]] [--host <host>] [--through <step-id>] [--answers <json>] [--build | --typecheck]",
     );
     process.exit(1);
   }
+  if (values.upgrade && !values.pro) {
+    console.error("--upgrade only works with --pro");
+    process.exit(1);
+  }
+  const variant: Variant = values.upgrade
+    ? "upgrade"
+    : values.pro
+      ? "pro"
+      : "free";
+  const label = variant === "free" ? name : `${name}-${variant}`;
   if (values.answers) {
     answerOverrides = { recipe: name, values: JSON.parse(values.answers) };
   }
 
-  const { hosts: declared } = await loadRecipe(name);
+  const { hosts: declared } = (await loadBase(name)).manifest;
   const hosts = values.host ? [values.host] : declared;
+  if (values.out && (hosts.length !== 1 || existsSync(values.out))) {
+    // compose wipes its dest first, so never point it at an existing dir.
+    console.error("--out needs --host and a dir that doesn't exist yet");
+    process.exit(1);
+  }
 
   for (const host of hosts) {
-    const hostDir = join(ROOT, "hosts", host);
+    const hostDir = hostPath(host);
     if (!existsSync(hostDir)) throw new Error(`no such host: ${host}`);
-    const dest = join(ROOT, ".compose", name, host);
+    const dest = values.out
+      ? resolve(values.out)
+      : join(ROOT, ".compose", label, host);
 
     rmSync(dest, { force: true, recursive: true });
-    copyHost(hostDir, dest, `compose-${name}-${host}`);
+    copyHost(hostDir, dest, `compose-${label}-${host}`);
 
     const applied: Applied = new Map();
-    await applyRecipe(name, dest, applied, values.through);
-    console.log(`✓ composed ${name} → ${relative(ROOT, dest)}`);
+    await applyRecipe(name, dest, applied, values.through, variant);
+    console.log(`✓ composed ${label} → ${relative(ROOT, dest)}`);
 
     if (values.build || values.typecheck) {
       const mode = values.build ? "build" : "typecheck";
       await build(dest, applied, mode);
-      console.log(`✓ ${mode} passed: ${name} on ${host}`);
+      console.log(`✓ ${mode} passed: ${label} on ${host}`);
     }
   }
 }

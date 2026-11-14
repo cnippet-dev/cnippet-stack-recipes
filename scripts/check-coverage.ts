@@ -6,20 +6,12 @@
 // Context-only files (present so a reader or an append has something to work
 // against) go in recipes/<name>/.coverageignore, one path per line, relative
 // to files/. Lines starting with # are comments.
+// Pro add-ons (CNIPPET_EXTRA_ROOTS) are checked too: their files/ against
+// their own steps.
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { join, relative, resolve, sep } from "node:path";
-import { pathToFileURL } from "node:url";
-import { RecipeManifest } from "@cnippet/recipe-kit";
-
-const ROOT = resolve(import.meta.dir, "..");
-const RECIPES_DIR = join(ROOT, "recipes");
-
-const listDirs = (dir: string): string[] =>
-  existsSync(dir)
-    ? readdirSync(dir).filter((entry) =>
-        statSync(join(dir, entry)).isDirectory(),
-      )
-    : [];
+import { join, relative, sep } from "node:path";
+import { RecipeAddon, RecipeManifest } from "@cnippet/recipe-kit";
+import { listRecipeDirs, type RecipeDir, readConfig } from "./lib/roots";
 
 function walk(dir: string): string[] {
   return readdirSync(dir).flatMap((entry) => {
@@ -39,15 +31,18 @@ function readIgnore(recipeDir: string): Set<string> {
   );
 }
 
-async function checkRecipe(name: string): Promise<string[]> {
-  const recipeDir = join(RECIPES_DIR, name);
+async function checkRecipe({
+  dir: recipeDir,
+  kind,
+}: RecipeDir): Promise<string[]> {
   const filesDir = join(recipeDir, "files");
   if (!existsSync(filesDir)) return ["missing files/ directory"];
 
-  const mod = await import(
-    pathToFileURL(join(recipeDir, "recipe.config.ts")).href
-  );
-  const parsed = RecipeManifest.safeParse(mod.default);
+  const raw = await readConfig(recipeDir);
+  const parsed =
+    kind === "addon"
+      ? RecipeAddon.safeParse(raw)
+      : RecipeManifest.safeParse(raw);
   if (!parsed.success)
     return ["invalid recipe.config.ts — run validate-recipes"];
 
@@ -90,30 +85,33 @@ async function checkRecipe(name: string): Promise<string[]> {
 }
 
 async function main() {
-  const allRecipes = listDirs(RECIPES_DIR);
+  const entries = await listRecipeDirs();
   const requested = process.argv.slice(2);
   for (const name of requested) {
-    if (!allRecipes.includes(name)) {
+    if (!entries.some((e) => e.name === name)) {
       console.error(`✗ ${name}: no such recipe in recipes/`);
       process.exit(1);
     }
   }
 
-  const names = requested.length > 0 ? requested : allRecipes.sort();
+  const selected = requested.length
+    ? entries.filter((e) => requested.includes(e.name))
+    : entries;
   let failed = 0;
-  for (const name of names) {
-    const errors = await checkRecipe(name);
+  for (const entry of selected) {
+    const label = entry.kind === "addon" ? `${entry.name} (pro)` : entry.name;
+    const errors = await checkRecipe(entry);
     if (errors.length === 0) {
-      console.log(`✓ ${name}`);
+      console.log(`✓ ${label}`);
     } else {
       failed++;
-      console.error(`✗ ${name}`);
+      console.error(`✗ ${label}`);
       for (const error of errors) console.error(`    ${error}`);
     }
   }
 
   console.log(
-    `\n${names.length - failed}/${names.length} recipe(s) fully covered`,
+    `\n${selected.length - failed}/${selected.length} recipe(s) fully covered`,
   );
   if (failed > 0) process.exit(1);
 }
