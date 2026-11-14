@@ -3,7 +3,7 @@
 import { EyeIcon, EyeOffIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -39,15 +39,17 @@ export default function RegisterForm({
   });
   const { update } = useSession();
   const router = useRouter();
+  const redirected = useRef(false);
 
   useEffect(() => {
-    if (state.success) {
+    if (state.success && !redirected.current) {
+      redirected.current = true;
       update().then(() => {
         router.push("/dashboard");
         router.refresh();
       });
     }
-  }, [state.success, update, router.refresh, router.push]);
+  }, [state.success, update, router]);
 
   useEffect(() => {
     if (state.message) {
