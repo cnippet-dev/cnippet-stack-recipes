@@ -164,6 +164,52 @@ export const RecipeManifest = z.object({
 export type RecipeManifest = z.infer<typeof RecipeManifest>;
 export type RecipeManifestInput = z.input<typeof RecipeManifest>;
 
+// A Pro add-on: `recipes/<name>/recipe.config.ts` in the pro repo, with
+// `extends: "<name>"`. It only adds to its base (the free recipe of the same
+// name): extra steps (whose files may replace base files), prompts, env vars,
+// deps. Everything not here (hosts, supports, category, …) comes from the
+// base. `mergeAddon()` turns base + add-on into one installable manifest.
+export const RecipeAddon = z.object({
+  // Semver range of base versions this add-on is built against: "^0.3.0",
+  // ">=0.3.0" or an exact "0.3.0".
+  baseVersion: z.string(),
+  checks: z.array(CheckSchema).default([]),
+  cnippetUiComponents: z.array(z.string()).optional(),
+  dependencies: z.array(z.string()).default([]),
+  // The Pro pitch shown next to the free description.
+  description: z.string(),
+  devDependencies: z.array(z.string()).default([]),
+  envVars: z.array(EnvVarSchema).default([]),
+  extends: z.string().regex(/^[a-z0-9-]+$/),
+  // What Pro adds, one short line each — the Free vs Pro comparison.
+  features: z.array(z.string().min(1)).min(1),
+  gitignore: z.array(z.string()).optional(),
+  // Same as `extends` and the folder name.
+  name: z.string().regex(/^[a-z0-9-]+$/),
+  prompts: z.array(PromptSchema).default([]),
+  // Recipes needed on top of the base's own `requires`.
+  requires: z.array(z.string()).default([]),
+  steps: z.array(StepSchema).min(1),
+  tier: z.literal("pro"),
+  title: z.string(),
+  trustedBuildScripts: z.array(z.string()).optional(),
+  // The add-on's own version, separate from the base's.
+  version: z.string(),
+});
+export type RecipeAddon = z.infer<typeof RecipeAddon>;
+export type RecipeAddonInput = z.input<typeof RecipeAddon>;
+
+export type RecipeConfig =
+  | { kind: "recipe"; manifest: RecipeManifest }
+  | { kind: "addon"; addon: RecipeAddon };
+
+/** Parses a `recipe.config.ts` default export: an add-on if it has `extends`, else a recipe. Throws on invalid input. */
+export function parseRecipeConfig(raw: unknown): RecipeConfig {
+  return typeof raw === "object" && raw !== null && "extends" in raw
+    ? { addon: RecipeAddon.parse(raw), kind: "addon" }
+    : { kind: "recipe", manifest: RecipeManifest.parse(raw) };
+}
+
 /** Every step's manual steps, in step order. */
 export function allManualSteps(manifest: RecipeManifest): ManualStep[] {
   return manifest.steps.flatMap((step) => step.manualSteps);
