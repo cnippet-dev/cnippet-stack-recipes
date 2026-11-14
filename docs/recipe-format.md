@@ -250,3 +250,27 @@ and import the client the `prisma` recipe installs. Don't ship a second one.
 | `with-prisma` | No `src/`, Prisma 7 already set up | Recipes that `requires: ["prisma"]` |
 
 Hosts hold nothing recipe-specific. Need a new host (e.g. `with-drizzle`)? Open an issue first.
+
+---
+
+## 10. Pro add-ons (format only, tools coming)
+
+A recipe can have a **Pro add-on**: a folder with the same name in the private `cnippet-stack-recipes-pro` repo whose
+`recipe.config.ts` has `extends: "<name>"`. It only adds to the free recipe (the "base"). Installing Pro = the base's
+steps, then the add-on's.
+
+Extra fields: `extends`, `baseVersion` (`"^0.3.0"`, `">=0.3.0"` or exact), `features` (one line per thing Pro adds),
+plus `title`, `description`, `version`, `steps`, and optional `prompts`, `envVars`, `checks`, `dependencies`,
+`devDependencies`, `requires`, `cnippetUiComponents`, `gitignore`, `trustedBuildScripts`. Everything else comes from
+the base. The schema is `RecipeAddon` in `packages/recipe-kit/src/schema.ts`. The merge is `mergeAddon` in `merge.ts`.
+
+Rules:
+
+- Step ids, prompt ids and env var names can't repeat the base's.
+- A dependency the base already has must use the same version. To change it, change the base.
+- To change a base file, add a `create` file with the same target and `replaces: true`. Only the Pro version is written.
+- Append files use `// >>> cnippet:<name>-pro` / `// <<< cnippet:<name>-pro` markers.
+- Pro can't remove or edit a base step. If it needs to, change the base so Pro can plug in.
+
+`compose --pro`, `recipe new --pro` and `recipe check --pro` come in a later change. Until then, nobody needs to
+write an add-on.
