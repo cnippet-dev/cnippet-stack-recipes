@@ -6,7 +6,7 @@ import { useSession } from "next-auth/react";
 export default function Header() {
   const { data: session } = useSession();
   return (
-    <nav className="absolute top-0 left-0 flex h-[70px] w-screen items-center justify-end text-background">
+    <nav className="flex h-[70px] w-full items-center justify-end">
       {session?.user ? (
         session?.user.role === "ADMIN" ? (
           <Link
