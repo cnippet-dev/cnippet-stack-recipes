@@ -21,7 +21,7 @@ export default async function Profile() {
   const initials = (user.name ?? user.email).charAt(0).toUpperCase();
 
   return (
-    <div className="flex min-h-screen w-screen items-center justify-center bg-black px-4 py-24 text-white">
+    <div className="flex w-full items-center justify-center px-4 py-24">
       <Card className="w-full max-w-md">
         <CardHeader className="items-center text-center">
           <Avatar className="mb-2 size-16 text-xl">

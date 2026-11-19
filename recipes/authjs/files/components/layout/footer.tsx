@@ -6,7 +6,7 @@ import { SignOutButton } from "@/components/auth/signout-button";
 export default function Footer() {
   const { data: session } = useSession();
   return (
-    <footer className="absolute bottom-0 left-0 flex h-[70px] w-screen items-center justify-end text-white">
+    <footer className="mt-auto flex h-[70px] w-full items-center justify-end">
       {session?.user ? (
         <div className="mr-5">
           <SignOutButton />

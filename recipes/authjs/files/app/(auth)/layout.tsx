@@ -19,7 +19,7 @@ export default async function AuthLayout({
       <ToastProvider position="top-left">
         <AnchoredToastProvider>
           <Header />
-          <main className="mx-auto mt-[15%] flex max-w-sm flex-col items-center justify-center rounded-sm px-4 py-4 text-white">
+          <main className="mx-auto mt-[15%] flex max-w-sm flex-col items-center justify-center rounded-sm px-4 py-4">
             {children}
           </main>
         </AnchoredToastProvider>

@@ -247,5 +247,5 @@ export default {
   },
   tier: "free",
   title: "Auth.js (NextAuth v5)",
-  version: "0.3.0",
+  version: "0.3.1",
 } satisfies RecipeManifestInput;
